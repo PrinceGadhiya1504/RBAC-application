@@ -6,6 +6,7 @@ from routes.auth_routes import auth_blueprint
 from routes.role_routes import role_blueprint
 from routes.user_role_routes import user_role_blueprint
 from routes.user_routes import user_blueprint
+from routes.page_routes import page_blueprint
 from datetime import timedelta
 from flask_jwt_extended import JWTManager
 
@@ -20,6 +21,7 @@ app.register_blueprint(auth_blueprint)
 app.register_blueprint(role_blueprint)
 app.register_blueprint(user_role_blueprint)
 app.register_blueprint(user_blueprint)
+app.register_blueprint(page_blueprint)
 
 @app.route("/api", methods=["GET"])
 def health_check():
