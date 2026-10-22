@@ -7,6 +7,7 @@ from routes.role_routes import role_blueprint
 from routes.user_role_routes import user_role_blueprint
 from routes.user_routes import user_blueprint
 from routes.page_routes import page_blueprint
+from routes.permission_routes import permission_blueprint
 from datetime import timedelta
 from flask_jwt_extended import JWTManager
 
@@ -22,6 +23,7 @@ app.register_blueprint(role_blueprint)
 app.register_blueprint(user_role_blueprint)
 app.register_blueprint(user_blueprint)
 app.register_blueprint(page_blueprint)
+app.register_blueprint(permission_blueprint)
 
 @app.route("/api", methods=["GET"])
 def health_check():
@@ -48,7 +50,6 @@ def test_db():
             "success": False,
             "message": "Database query failed"
         }), 500
-
 
 if __name__ == "__main__":
     app.run(debug=app.config["DEBUG"])
