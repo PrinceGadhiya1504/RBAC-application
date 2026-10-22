@@ -26,13 +26,13 @@ def register_user(data):
     ).decode("utf-8")
 
     user = User(
-        full_name=data["full_name"].strip(),
-        email=email.lower(),
-        contact_number=(
+        full_name = data["full_name"].strip(),
+        email = email.lower(),
+        contact_number = (
             data.get("contact_number", "").strip() or None
         ),
-        date_of_joining=date.today(),
-        password_hash=password_hash,
+        date_of_joining = date.today(),
+        password_hash = password_hash,
     )
 
     try:

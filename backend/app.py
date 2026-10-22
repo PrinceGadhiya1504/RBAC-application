@@ -3,6 +3,7 @@ from config.settings import Config
 from config.database import db
 from models.user import User
 from routes.auth_routes import auth_blueprint
+from routes.role_routes import role_blueprint
 from datetime import timedelta
 from flask_jwt_extended import JWTManager
 
@@ -14,6 +15,7 @@ jwt = JWTManager(app)
 
 db.init_app(app)
 app.register_blueprint(auth_blueprint)
+app.register_blueprint(role_blueprint)
 
 @app.route("/api", methods=["GET"])
 def health_check():
