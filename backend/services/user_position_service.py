@@ -59,6 +59,35 @@ def assign_position_to_user(data):
         db.session.rollback()
         raise
 
+def get_all_user_positions():
+    assignments = (
+        db.session.query(UserPosition, User, Position)
+        .join(User, UserPosition.user_id == User.user_id)
+        .join(Position, UserPosition.position_id == Position.position_id)
+        .order_by(UserPosition.user_position_id)
+        .all()
+    )
+
+    return {
+        "success": True,
+        "user_positions": [
+            {
+                "user_position_id": item.user_position_id,
+                "user_id": user.user_id,
+                "user_name": user.full_name,
+                "position_id": position.position_id,
+                "position_name": position.name,
+                "start_date": item.start_date.isoformat(),
+                "end_date": (
+                    item.end_date.isoformat()
+                    if item.end_date
+                    else None
+                )
+            }
+            for item, user, position in assignments
+        ]
+    }, 200
+
 def get_user_positions(user_id):
     user = db.session.get(User, user_id)
 
