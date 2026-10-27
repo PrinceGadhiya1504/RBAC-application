@@ -13,6 +13,7 @@ export interface AuthUser {
     email: string;
     contact_number?: string | null;
     date_of_joining?: string | null;
+    role?: string | null;
     roles?: string[];
     permissions?: UserPermissions;
 }

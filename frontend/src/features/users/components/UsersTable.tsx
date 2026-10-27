@@ -10,9 +10,11 @@ import { useUsers } from "../hooks/useUsers";
 import type { User } from "../types/user.types";
 import EditUserForm from "./EditUserForm";
 import CreateUserForm from "./CreateUserForm";
+import AssignRoleDialog from "@/features/roles/components/AssignRoleDialog";
 import { useDeleteUser } from "../hooks/useDeleteUser";
+import { useAllUserRoles } from "@/features/roles/hooks/useAllUserRoles";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { Edit2, Trash2, Users, UserPlus } from "lucide-react";
+import { Edit2, Trash2, Users, UserPlus, Shield } from "lucide-react";
 import axios from "axios";
 
 export default function UsersTable() {
@@ -22,6 +24,7 @@ export default function UsersTable() {
     const canDelete = hasPermission("User Management", "Delete");
 
     const { data, isPending, isError, error } = useUsers();
+    const { data: userRolesData } = useAllUserRoles();
     const {
         mutate: deleteUser,
         isPending: isDeleting,
@@ -30,7 +33,15 @@ export default function UsersTable() {
     } = useDeleteUser();
 
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [roleAssignUser, setRoleAssignUser] = useState<User | null>(null);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+    const userRoleMap: Record<number, string> = {};
+    for (const item of userRolesData?.user_roles || []) {
+        if (item.role_name) {
+            userRoleMap[item.user_id] = item.role_name;
+        }
+    }
 
     if (isPending) {
         return (
@@ -65,7 +76,7 @@ export default function UsersTable() {
                         </span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                        Manage members of your organization and their access.
+                        Manage members of your organization, their access roles, and permissions.
                     </p>
                 </div>
 
@@ -84,6 +95,7 @@ export default function UsersTable() {
                             <th className="px-4 py-3 font-semibold">ID</th>
                             <th className="px-4 py-3 font-semibold">Full Name</th>
                             <th className="px-4 py-3 font-semibold">Email</th>
+                            <th className="px-4 py-3 font-semibold">Role</th>
                             <th className="px-4 py-3 font-semibold">Contact</th>
                             <th className="px-4 py-3 font-semibold">Date Joined</th>
                             <th className="px-4 py-3 font-semibold">Actions</th>
@@ -102,6 +114,16 @@ export default function UsersTable() {
                                 <td className="px-4 py-3 text-muted-foreground">
                                     {user.email}
                                 </td>
+                                <td className="px-4 py-3">
+                                    {userRoleMap[user.user_id] ? (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                                            <Shield className="size-3" />
+                                            {userRoleMap[user.user_id]}
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs text-muted-foreground italic">No role</span>
+                                    )}
+                                </td>
                                 <td className="px-4 py-3 text-xs text-muted-foreground">
                                     {user.contact_number || "—"}
                                 </td>
@@ -112,6 +134,17 @@ export default function UsersTable() {
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setRoleAssignUser(user)}
+                                            className="h-8 gap-1.5"
+                                            title="Assign Role"
+                                        >
+                                            <Shield className="size-3.5 text-primary" />
+                                            Role
+                                        </Button>
+
                                         {canEdit && (
                                             <Button
                                                 size="sm"
@@ -123,6 +156,7 @@ export default function UsersTable() {
                                                 Edit
                                             </Button>
                                         )}
+
                                         {canDelete && (
                                             <Button
                                                 size="sm"
@@ -143,6 +177,7 @@ export default function UsersTable() {
                                                 Delete
                                             </Button>
                                         )}
+
                                         {!canEdit && !canDelete && (
                                             <span className="text-xs text-muted-foreground italic">Read-only</span>
                                         )}
@@ -153,7 +188,7 @@ export default function UsersTable() {
 
                         {usersList.length === 0 && (
                             <tr>
-                                <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                                <td colSpan={7} className="p-8 text-center text-muted-foreground">
                                     No users found.
                                 </td>
                             </tr>
@@ -207,6 +242,15 @@ export default function UsersTable() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* Manage User Roles Dialog Modal */}
+            <AssignRoleDialog
+                user={roleAssignUser}
+                open={roleAssignUser !== null}
+                onOpenChange={(open) => {
+                    if (!open) setRoleAssignUser(null);
+                }}
+            />
         </div>
     );
 }
