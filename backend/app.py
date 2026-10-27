@@ -14,8 +14,11 @@ from routes.position_routes import position_blueprint
 from routes.user_position_routes import user_position_blueprint
 from datetime import timedelta
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
+
 app.config.from_object(Config)
 
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=30)

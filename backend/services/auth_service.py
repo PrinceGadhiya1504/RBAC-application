@@ -3,9 +3,50 @@ from flask_bcrypt import Bcrypt
 from sqlalchemy import select
 from config.database import db
 from models.user import User
+from models.role import Role
+from models.user_role import UserRole
+from models.page import Page
+from models.permission import Permission
+from models.page_permission import PagePermission
+from models.role_page_permission import RolePagePermission
 from flask_jwt_extended import create_access_token
 
 bcrypt = Bcrypt()
+
+def get_user_roles_and_permissions(user_id: int):
+    roles = (
+        db.session.query(Role.name)
+        .join(UserRole, UserRole.role_id == Role.role_id)
+        .filter(UserRole.user_id == user_id)
+        .all()
+    )
+    user_roles = [r[0] for r in roles]
+
+    granted = (
+        db.session.query(Page.name, Permission.name)
+        .join(PagePermission, PagePermission.page_id == Page.page_id)
+        .join(Permission, Permission.permission_id == PagePermission.permission_id)
+        .join(
+            RolePagePermission,
+            RolePagePermission.page_permission_id == PagePermission.page_permission_id,
+        )
+        .join(UserRole, UserRole.role_id == RolePagePermission.role_id)
+        .filter(
+            UserRole.user_id == user_id,
+            RolePagePermission.is_given.is_(True),
+        )
+        .distinct()
+        .all()
+    )
+
+    permissions_map = {}
+    for page_name, perm_name in granted:
+        if page_name not in permissions_map:
+            permissions_map[page_name] = []
+        if perm_name not in permissions_map[page_name]:
+            permissions_map[page_name].append(perm_name)
+
+    return user_roles, permissions_map
 
 def register_user(data):
     email = data["email"].strip().lower()
@@ -25,13 +66,20 @@ def register_user(data):
         data["password"]
     ).decode("utf-8")
 
+    joining_date = date.today()
+    if data.get("date_of_joining"):
+        try:
+            joining_date = date.fromisoformat(data["date_of_joining"])
+        except ValueError:
+            joining_date = date.today()
+
     user = User(
         full_name = data["full_name"].strip(),
         email = email.lower(),
         contact_number = (
             data.get("contact_number", "").strip() or None
         ),
-        date_of_joining = date.today(),
+        date_of_joining = joining_date,
         password_hash = password_hash,
     )
 
@@ -79,6 +127,7 @@ def login_user(data):
         }
 
     access_token = create_access_token(identity=str(user.user_id))
+    user_roles, permissions_map = get_user_roles_and_permissions(user.user_id)
 
     return {
         "success": True,
@@ -88,6 +137,8 @@ def login_user(data):
             "user_id": user.user_id,
             "full_name": user.full_name,
             "email": user.email,
+            "roles": user_roles,
+            "permissions": permissions_map,
         },
         "status_code": 200,
     }

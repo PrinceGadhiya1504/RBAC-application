@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from schemas.auth_schema import validate_register_data, validate_login_data
-from services.auth_service import register_user, login_user
+from services.auth_service import register_user, login_user, get_user_roles_and_permissions
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from config.database import db
 from models.user import User
@@ -56,15 +56,17 @@ def login():
 
 @jwt_required()
 def get_profile():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
 
-    user = db.session.get(User, int(user_id))
+    user = db.session.get(User, user_id)
 
     if user is None:
         return jsonify({
             "success": False,
             "message": "User not found."
         }), 404
+
+    user_roles, permissions_map = get_user_roles_and_permissions(user.user_id)
 
     return jsonify({
         "success": True,
@@ -74,6 +76,8 @@ def get_profile():
             "full_name": user.full_name,
             "email": user.email,
             "contact_number": user.contact_number,
-            "date_of_joining": user.date_of_joining.isoformat()
+            "date_of_joining": user.date_of_joining.isoformat() if user.date_of_joining else None,
+            "roles": user_roles,
+            "permissions": permissions_map,
         }
     }), 200
