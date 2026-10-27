@@ -83,7 +83,7 @@ def update_user_role_controller(user_role_id):
             "message": "An internal server error occurred."
         }), 500
 
-def remove_role_from_user_controller(user_id, role_id):
+def remove_role_from_user_controller(user_id, role_id=None):
     try:
         response, status_code = remove_role_from_user(user_id, role_id)
         return jsonify(response), status_code

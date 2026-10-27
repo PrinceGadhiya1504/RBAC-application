@@ -24,6 +24,11 @@ def assign_role_route():
 def update_user_role_route(user_role_id):
     return update_user_role_controller(user_role_id)
 
+@user_role_blueprint.route("/<int:user_id>", methods=["DELETE"])
+@role_required("Admin")
+def remove_user_role_route(user_id):
+    return remove_role_from_user_controller(user_id)
+
 @user_role_blueprint.route("/<int:user_id>/<int:role_id>", methods=["DELETE"])
 @role_required("Admin")
 def remove_role_from_user_route(user_id, role_id):

@@ -36,22 +36,21 @@ def get_user_roles(user_id):
             "message": "User not found."
         }, 404
 
-    assignments = db.session.execute(
+    assignment = db.session.execute(
         select(UserRole).where(
             UserRole.user_id == user_id
         )
-    ).scalars().all()
+    ).scalars().first()
 
-    roles = []
-
-    for assignment in assignments:
+    role_data = None
+    if assignment:
         role = db.session.get(Role, assignment.role_id)
         if role:
-            roles.append({
+            role_data = {
                 "role_id": role.role_id,
                 "name": role.name,
                 "description": role.description
-            })
+            }
 
     return {
         "success": True,
@@ -59,7 +58,8 @@ def get_user_roles(user_id):
             "user_id": user.user_id,
             "full_name": user.full_name
         },
-        "roles": roles
+        "role": role_data,
+        "roles": [role_data] if role_data else []
     }, 200
     
 def assign_role_to_user(data):
@@ -83,17 +83,40 @@ def assign_role_to_user(data):
         }, 404
 
     existing_assignment = db.session.execute(
-        select(UserRole).where(
-            UserRole.user_id == user_id,
-            UserRole.role_id == role_id
-        )
-    ).scalar_one_or_none()
+        select(UserRole).where(UserRole.user_id == user_id)
+    ).scalars().first()
 
     if existing_assignment:
-        return {
-            "success": False,
-            "message": "Role is already assigned to this user."
-        }, 409
+        if existing_assignment.role_id == role_id:
+            return {
+                "success": True,
+                "message": "Role is already assigned to this user.",
+                "assignment": {
+                    "user_role_id": existing_assignment.user_role_id,
+                    "user_id": user.user_id,
+                    "user_name": user.full_name,
+                    "role_id": role.role_id,
+                    "role_name": role.name
+                }
+            }, 200
+
+        existing_assignment.role_id = role_id
+        try:
+            db.session.commit()
+            return {
+                "success": True,
+                "message": "User role updated successfully.",
+                "assignment": {
+                    "user_role_id": existing_assignment.user_role_id,
+                    "user_id": user.user_id,
+                    "user_name": user.full_name,
+                    "role_id": role.role_id,
+                    "role_name": role.name
+                }
+            }, 200
+        except Exception:
+            db.session.rollback()
+            raise
 
     assignment = UserRole(
         user_id = user_id,
@@ -198,7 +221,7 @@ def update_user_role(user_role_id, data):
         db.session.rollback()
         raise
 
-def remove_role_from_user(user_id, role_id):
+def remove_role_from_user(user_id, role_id=None):
     user = db.session.get(User, user_id)
 
     if user is None:
@@ -207,25 +230,22 @@ def remove_role_from_user(user_id, role_id):
             "message": "User not found."
         }, 404
 
-    role = db.session.get(Role, role_id)
+    stmt = select(UserRole).where(UserRole.user_id == user_id)
+    if role_id is not None:
+        role = db.session.get(Role, role_id)
+        if role is None:
+            return {
+                "success": False,
+                "message": "Role not found."
+            }, 404
+        stmt = stmt.where(UserRole.role_id == role_id)
 
-    if role is None:
-        return {
-            "success": False,
-            "message": "Role not found."
-        }, 404
-
-    assignment = db.session.execute(
-        select(UserRole).where(
-            UserRole.user_id == user_id,
-            UserRole.role_id == role_id
-        )
-    ).scalar_one_or_none()
+    assignment = db.session.execute(stmt).scalars().first()
 
     if assignment is None:
         return {
             "success": False,
-            "message": "This role is not assigned to the user."
+            "message": "No role assigned to this user."
         }, 404
 
     try:

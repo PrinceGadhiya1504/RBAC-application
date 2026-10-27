@@ -66,7 +66,7 @@ def get_profile():
             "message": "User not found."
         }), 404
 
-    user_roles, permissions_map = get_user_roles_and_permissions(user.user_id)
+    role_name, user_roles, permissions_map = get_user_roles_and_permissions(user.user_id)
 
     return jsonify({
         "success": True,
@@ -77,6 +77,7 @@ def get_profile():
             "email": user.email,
             "contact_number": user.contact_number,
             "date_of_joining": user.date_of_joining.isoformat() if user.date_of_joining else None,
+            "role": role_name,
             "roles": user_roles,
             "permissions": permissions_map,
         }

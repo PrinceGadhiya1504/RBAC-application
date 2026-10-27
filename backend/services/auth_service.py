@@ -14,13 +14,14 @@ from flask_jwt_extended import create_access_token
 bcrypt = Bcrypt()
 
 def get_user_roles_and_permissions(user_id: int):
-    roles = (
+    role = (
         db.session.query(Role.name)
         .join(UserRole, UserRole.role_id == Role.role_id)
         .filter(UserRole.user_id == user_id)
-        .all()
+        .first()
     )
-    user_roles = [r[0] for r in roles]
+    role_name = role[0] if role else None
+    user_roles = [role_name] if role_name else []
 
     granted = (
         db.session.query(Page.name, Permission.name)
@@ -46,7 +47,7 @@ def get_user_roles_and_permissions(user_id: int):
         if perm_name not in permissions_map[page_name]:
             permissions_map[page_name].append(perm_name)
 
-    return user_roles, permissions_map
+    return role_name, user_roles, permissions_map
 
 def register_user(data):
     email = data["email"].strip().lower()
@@ -127,7 +128,7 @@ def login_user(data):
         }
 
     access_token = create_access_token(identity=str(user.user_id))
-    user_roles, permissions_map = get_user_roles_and_permissions(user.user_id)
+    role_name, user_roles, permissions_map = get_user_roles_and_permissions(user.user_id)
 
     return {
         "success": True,
@@ -137,6 +138,7 @@ def login_user(data):
             "user_id": user.user_id,
             "full_name": user.full_name,
             "email": user.email,
+            "role": role_name,
             "roles": user_roles,
             "permissions": permissions_map,
         },
