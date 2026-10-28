@@ -38,18 +38,3 @@ export interface UserRolesResponse {
     success: boolean;
     user_roles: UserRoleAssignment[];
 }
-
-export interface UserSpecificRolesResponse {
-    success: boolean;
-    user: {
-        user_id: number;
-        full_name: string;
-    };
-    role?: Role | null;
-    roles?: Role[];
-}
-
-export interface AssignRoleRequest {
-    user_id: number;
-    role_id: number;
-}

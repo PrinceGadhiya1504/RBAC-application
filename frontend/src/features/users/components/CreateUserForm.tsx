@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useCreateUser } from "../hooks/useCreateUser";
+import { useRoles } from "@/features/roles/hooks/useRoles";
+import { usePositions } from "@/features/positions/hooks/usePositions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,8 +23,15 @@ export default function CreateUserForm({
     const [dateOfJoining, setDateOfJoining] = useState(
         () => new Date().toISOString().split("T")[0]
     );
+    const [roleId, setRoleId] = useState<string>("");
+    const [positionId, setPositionId] = useState<string>("");
 
     const { mutate: createUser, isPending, isError, error } = useCreateUser();
+    const { data: rolesData } = useRoles();
+    const { data: positionsData } = usePositions();
+
+    const roles = rolesData?.roles || [];
+    const positions = positionsData?.positions || [];
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -34,6 +43,8 @@ export default function CreateUserForm({
                 password,
                 contact_number: contactNumber.trim() || undefined,
                 date_of_joining: dateOfJoining || undefined,
+                role_id: roleId ? Number(roleId) : undefined,
+                position_id: positionId ? Number(positionId) : undefined,
             },
             {
                 onSuccess: () => {
@@ -42,6 +53,8 @@ export default function CreateUserForm({
                     setPassword("");
                     setContactNumber("");
                     setDateOfJoining(new Date().toISOString().split("T")[0]);
+                    setRoleId("");
+                    setPositionId("");
                     onSuccess?.();
                 },
             }
@@ -108,6 +121,42 @@ export default function CreateUserForm({
                         onChange={(event) => setDateOfJoining(event.target.value)}
                         required
                     />
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="userRole">Assigned Role</Label>
+                    <select
+                        id="userRole"
+                        value={roleId}
+                        onChange={(e) => setRoleId(e.target.value)}
+                        className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
+                    >
+                        <option value="">No role assigned</option>
+                        {roles.map((r) => (
+                            <option key={r.role_id} value={r.role_id}>
+                                {r.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="userPosition">Job Position</Label>
+                    <select
+                        id="userPosition"
+                        value={positionId}
+                        onChange={(e) => setPositionId(e.target.value)}
+                        className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
+                    >
+                        <option value="">No position assigned</option>
+                        {positions.map((p) => (
+                            <option key={p.position_id} value={p.position_id}>
+                                {p.name}
+                            </option>
+                        ))}
+                    </select>
                 </div>
             </div>
 

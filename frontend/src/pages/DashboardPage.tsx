@@ -14,15 +14,18 @@ import {
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useUsers } from "@/features/users/hooks/useUsers";
 import { useRoles } from "@/features/roles/hooks/useRoles";
+import { usePositions } from "@/features/positions/hooks/usePositions";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
     const { user } = useAuth();
     const { data: usersData } = useUsers();
     const { data: rolesData } = useRoles();
+    const { data: positionsData } = usePositions();
 
     const usersCount = usersData?.users?.length ?? 0;
     const rolesCount = rolesData?.roles?.length ?? 0;
+    const positionsCount = positionsData?.positions?.length ?? 0;
     const recentUsers = (usersData?.users || []).slice(0, 5);
 
     const statCards = [
@@ -55,8 +58,8 @@ export default function DashboardPage() {
         },
         {
             title: "Job Positions",
-            value: "Managed",
-            subtitle: "Organizational structure",
+            value: positionsCount,
+            subtitle: "Organizational titles",
             icon: Briefcase,
             color: "text-emerald-500",
             bg: "bg-emerald-500/10",

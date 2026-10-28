@@ -4,6 +4,10 @@ export interface User {
     email: string;
     contact_number?: string | null;
     date_of_joining?: string | null;
+    role_id?: number | null;
+    role_name?: string | null;
+    position_id?: number | null;
+    position_name?: string | null;
 }
 
 export interface UsersResponse {
@@ -24,6 +28,8 @@ export interface CreateUserRequest {
     password: string;
     contact_number?: string;
     date_of_joining?: string;
+    role_id?: number;
+    position_id?: number;
 }
 
 export interface UpdateUserRequest {
@@ -31,4 +37,6 @@ export interface UpdateUserRequest {
     email: string;
     contact_number?: string;
     date_of_joining?: string;
+    role_id?: number | null;
+    position_id?: number | null;
 }

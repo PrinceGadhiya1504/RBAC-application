@@ -30,7 +30,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Users", path: "/users", icon: Users, pageName: "User Management" },
+    { name: "Users", path: "/users", icon: Users, pageName: "Users" },
     { name: "Roles", path: "/roles", icon: Shield, pageName: "Roles" },
     { name: "Permissions", path: "/permissions", icon: KeyRound, pageName: "Permissions" },
     { name: "Positions", path: "/positions", icon: Briefcase, pageName: "Positions" },

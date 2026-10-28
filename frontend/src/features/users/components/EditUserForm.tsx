@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useUpdateUser } from "../hooks/useUpdateUser";
+import { useRoles } from "@/features/roles/hooks/useRoles";
+import { usePositions } from "@/features/positions/hooks/usePositions";
 import type { User } from "../types/user.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +25,19 @@ export default function EditUserForm({
     const [dateOfJoining, setDateOfJoining] = useState(
         user.date_of_joining ? user.date_of_joining.split("T")[0] : ""
     );
+    const [roleId, setRoleId] = useState<string>(
+        user.role_id ? String(user.role_id) : ""
+    );
+    const [positionId, setPositionId] = useState<string>(
+        user.position_id ? String(user.position_id) : ""
+    );
 
     const { mutate: updateUser, isPending, isError, error } = useUpdateUser();
+    const { data: rolesData } = useRoles();
+    const { data: positionsData } = usePositions();
+
+    const roles = rolesData?.roles || [];
+    const positions = positionsData?.positions || [];
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -37,6 +50,8 @@ export default function EditUserForm({
                     email,
                     contact_number: contactNumber.trim() || undefined,
                     date_of_joining: dateOfJoining || undefined,
+                    role_id: roleId ? Number(roleId) : null,
+                    position_id: positionId ? Number(positionId) : null,
                 },
             },
             {
@@ -91,6 +106,42 @@ export default function EditUserForm({
                         value={dateOfJoining}
                         onChange={(event) => setDateOfJoining(event.target.value)}
                     />
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="editUserRole">Assigned Role</Label>
+                    <select
+                        id="editUserRole"
+                        value={roleId}
+                        onChange={(e) => setRoleId(e.target.value)}
+                        className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
+                    >
+                        <option value="">No role assigned</option>
+                        {roles.map((r) => (
+                            <option key={r.role_id} value={r.role_id}>
+                                {r.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="editUserPosition">Job Position</Label>
+                    <select
+                        id="editUserPosition"
+                        value={positionId}
+                        onChange={(e) => setPositionId(e.target.value)}
+                        className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
+                    >
+                        <option value="">No position assigned</option>
+                        {positions.map((p) => (
+                            <option key={p.position_id} value={p.position_id}>
+                                {p.name}
+                            </option>
+                        ))}
+                    </select>
                 </div>
             </div>
 
