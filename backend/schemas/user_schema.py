@@ -7,7 +7,9 @@ def validate_update_user_data(data):
         "full_name",
         "email",
         "contact_number",
-        "date_of_joining"
+        "date_of_joining",
+        "role_id",
+        "position_id",
     }
 
     if not data:
@@ -20,6 +22,14 @@ def validate_update_user_data(data):
         errors["fields"] = (
             f"Unsupported fields: {', '.join(sorted(unknown_fields))}"
         )
+
+    if "role_id" in data and data["role_id"] is not None:
+        if not isinstance(data["role_id"], int) or isinstance(data["role_id"], bool) or data["role_id"] <= 0:
+            errors["role_id"] = "Role ID must be a positive integer or null."
+
+    if "position_id" in data and data["position_id"] is not None:
+        if not isinstance(data["position_id"], int) or isinstance(data["position_id"], bool) or data["position_id"] <= 0:
+            errors["position_id"] = "Position ID must be a positive integer or null."
 
     if "full_name" in data:
         name = data["full_name"]

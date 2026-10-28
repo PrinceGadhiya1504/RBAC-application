@@ -54,8 +54,8 @@ def create_page(data):
         return {
             "success": True,
             "message": "Page created successfully.",
-            "data": {
-                "id": page.page_id,
+            "page": {
+                "page_id": page.page_id,
                 "name": page.name
             }
         }, 201

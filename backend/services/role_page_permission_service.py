@@ -36,10 +36,24 @@ def assign_permission_to_role(data):
     ).first()
 
     if mapping:
-        return {
-            "success": False,
-            "message": "Permission is already assigned to this role."
-        }, 409
+        mapping.is_given = is_given
+        try:
+            db.session.commit()
+            return {
+                "success": True,
+                "message": "Role permission updated successfully.",
+                "role_page_permission": {
+                    "role_page_permission_id": mapping.role_page_permission_id,
+                    "role_id": role.role_id,
+                    "page_permission_id": page_permission.page_permission_id,
+                    "page_id": page_permission.page_id,
+                    "permission_id": page_permission.permission_id,
+                    "is_given": mapping.is_given
+                }
+            }, 200
+        except Exception:
+            db.session.rollback()
+            raise
 
     try:
         mapping = RolePagePermission(
@@ -70,6 +84,55 @@ def assign_permission_to_role(data):
             "success": False,
             "message": "Permission mapping already exists."
         }, 409
+
+    except Exception:
+        db.session.rollback()
+        raise
+
+
+def bulk_assign_permissions_to_role(data):
+    role_id = data.get("role_id")
+    permissions_list = data.get("permissions", [])
+
+    role = db.session.get(Role, role_id)
+    if not role:
+        return {
+            "success": False,
+            "message": "Role not found."
+        }, 404
+
+    try:
+        for item in permissions_list:
+            page_permission_id = item.get("page_permission_id")
+            is_given = item.get("is_given", False)
+
+            if not page_permission_id:
+                continue
+
+            page_permission = db.session.get(PagePermission, page_permission_id)
+            if not page_permission:
+                continue
+
+            mapping = db.session.query(RolePagePermission).filter_by(
+                role_id=role_id,
+                page_permission_id=page_permission_id
+            ).first()
+
+            if mapping:
+                mapping.is_given = is_given
+            else:
+                mapping = RolePagePermission(
+                    role_id=role_id,
+                    page_permission_id=page_permission_id,
+                    is_given=is_given
+                )
+                db.session.add(mapping)
+
+        db.session.commit()
+        return {
+            "success": True,
+            "message": f"Permissions updated successfully for {role.name}."
+        }, 200
 
     except Exception:
         db.session.rollback()

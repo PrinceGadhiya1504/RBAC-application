@@ -50,6 +50,16 @@ def validate_register_data(data):
             except ValueError:
                 errors["date_of_joining"] = "Invalid date. Use YYYY-MM-DD format."
 
+    role_id = data.get("role_id")
+    if role_id is not None and role_id != "":
+        if not isinstance(role_id, int) or isinstance(role_id, bool) or role_id <= 0:
+            errors["role_id"] = "Role ID must be a positive integer."
+
+    position_id = data.get("position_id")
+    if position_id is not None and position_id != "":
+        if not isinstance(position_id, int) or isinstance(position_id, bool) or position_id <= 0:
+            errors["position_id"] = "Position ID must be a positive integer."
+
     return errors
 
 def validate_login_data(data):

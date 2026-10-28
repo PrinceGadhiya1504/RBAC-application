@@ -9,6 +9,8 @@ from models.page import Page
 from models.permission import Permission
 from models.page_permission import PagePermission
 from models.role_page_permission import RolePagePermission
+from models.position import Position
+from models.user_position import UserPosition
 from flask_jwt_extended import create_access_token
 
 bcrypt = Bcrypt()
@@ -86,6 +88,28 @@ def register_user(data):
 
     try:
         db.session.add(user)
+        db.session.flush()
+
+        role_id = data.get("role_id")
+        role_name = None
+        if role_id:
+            role = db.session.get(Role, role_id)
+            if role:
+                db.session.add(UserRole(user_id=user.user_id, role_id=role.role_id))
+                role_name = role.name
+
+        position_id = data.get("position_id")
+        position_name = None
+        if position_id:
+            pos = db.session.get(Position, position_id)
+            if pos:
+                db.session.add(UserPosition(
+                    user_id=user.user_id,
+                    position_id=pos.position_id,
+                    start_date=user.date_of_joining or date.today()
+                ))
+                position_name = pos.name
+
         db.session.commit()
 
         return {
@@ -97,6 +121,10 @@ def register_user(data):
                 "email": user.email,
                 "contact_number": user.contact_number,
                 "date_of_joining": user.date_of_joining.isoformat(),
+                "role_id": role_id if role_name else None,
+                "role_name": role_name,
+                "position_id": position_id if position_name else None,
+                "position_name": position_name,
             },
             "status_code": 201,
         }

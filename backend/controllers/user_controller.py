@@ -95,9 +95,19 @@ def update_user_controller(user_id):
 
     except Exception as error:
         if isinstance(error, IntegrityError):
+            err_str = str(error).lower()
+            if "email" in err_str:
+                msg = "Email already exists."
+            elif "role" in err_str:
+                msg = "Role constraint error."
+            elif "position" in err_str:
+                msg = "Position constraint error."
+            else:
+                msg = "Database constraint violation."
+
             return jsonify({
                 "success": False,
-                "message": "Email already exists."
+                "message": msg
             }), 409
 
         return jsonify({
