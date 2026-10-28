@@ -7,9 +7,3 @@ export interface PagesResponse {
     success: boolean;
     pages: Page[];
 }
-
-export interface PageResponse {
-    success: boolean;
-    page: Page;
-    message?: string;
-}

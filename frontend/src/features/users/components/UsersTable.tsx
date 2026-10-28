@@ -11,15 +11,13 @@ import type { User } from "../types/user.types";
 import EditUserForm from "./EditUserForm";
 import CreateUserForm from "./CreateUserForm";
 import { useDeleteUser } from "../hooks/useDeleteUser";
-import { useAuth } from "@/features/auth/context/AuthContext";
+import { useModulePermissions } from "@/features/auth/hooks/useModulePermissions";
+import AccessDeniedCard from "@/features/auth/components/AccessDeniedCard";
 import { Edit2, Trash2, Users, UserPlus } from "lucide-react";
 import axios from "axios";
 
 export default function UsersTable() {
-    const { hasPermission } = useAuth();
-    const canCreate = hasPermission("Users", "Create");
-    const canEdit = hasPermission("Users", "Update");
-    const canDelete = hasPermission("Users", "Delete");
+    const { canView, canCreate, canUpdate: canEdit, canDelete } = useModulePermissions("Users");
 
     const { data, isPending, isError, error } = useUsers();
     const {
@@ -31,6 +29,10 @@ export default function UsersTable() {
 
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+    if (!canView) {
+        return <AccessDeniedCard module="Users" />;
+    }
 
     if (isPending) {
         return (

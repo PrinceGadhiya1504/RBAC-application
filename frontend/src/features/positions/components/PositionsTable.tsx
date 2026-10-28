@@ -4,7 +4,8 @@ import { useDeletePosition } from "../hooks/useDeletePosition";
 import type { Position } from "../types/position.types";
 import CreatePositionDialog from "./CreatePositionDialog";
 import EditPositionDialog from "./EditPositionDialog";
-import { useAuth } from "@/features/auth/context/AuthContext";
+import { useModulePermissions } from "@/features/auth/hooks/useModulePermissions";
+import AccessDeniedCard from "@/features/auth/components/AccessDeniedCard";
 import { Button } from "@/components/ui/button";
 import {
     Briefcase,
@@ -17,10 +18,7 @@ import {
 import axios from "axios";
 
 export default function PositionsTable() {
-    const { hasPermission } = useAuth();
-    const canCreate = hasPermission("Positions", "Create");
-    const canEdit = hasPermission("Positions", "Update");
-    const canDelete = hasPermission("Positions", "Delete");
+    const { canView, canCreate, canUpdate: canEdit, canDelete } = useModulePermissions("Positions");
 
     const { data, isPending, isError, error } = usePositions();
     const { mutate: deletePos } = useDeletePosition();
@@ -28,6 +26,10 @@ export default function PositionsTable() {
     const [searchQuery, setSearchQuery] = useState("");
     const [editingPosition, setEditingPosition] = useState<Position | null>(null);
     const [actionError, setActionError] = useState<string | null>(null);
+
+    if (!canView) {
+        return <AccessDeniedCard module="Positions" />;
+    }
 
     const positions = useMemo(() => data?.positions || [], [data]);
 

@@ -5,6 +5,8 @@ import { usePermissions } from "@/features/permissions/hooks/usePermissions";
 import { usePagePermissions } from "@/features/pagePermissions/hooks/usePagePermissions";
 import { useRolePagePermissions } from "../hooks/useRolePagePermissions";
 import { useBulkSaveRolePagePermissions } from "../hooks/useBulkSaveRolePagePermissions";
+import { useModulePermissions } from "@/features/auth/hooks/useModulePermissions";
+import AccessDeniedCard from "@/features/auth/components/AccessDeniedCard";
 import { Button } from "@/components/ui/button";
 import {
     Shield,
@@ -30,6 +32,9 @@ const STANDARD_COLUMNS: StandardColumn[] = [
 ];
 
 export default function RoleMatrixManager() {
+    const { canView, canUpdate, canCreate } = useModulePermissions("Permissions");
+    const canEdit = canUpdate || canCreate;
+
     const { data: rolesData, isPending: isRolesLoading } = useRoles();
     const { data: pagesData, isPending: isPagesLoading } = usePages();
     const { data: permissionsData, isPending: isPermissionsLoading } = usePermissions();
@@ -145,7 +150,7 @@ export default function RoleMatrixManager() {
     }, [activeRole, localOverrides, serverRolePermLookup]);
 
     const handleToggleCell = (pagePermId: number) => {
-        if (!activeRole) return;
+        if (!canEdit || !activeRole) return;
 
         const roleId = activeRole.role_id;
         const key = `${roleId}_${pagePermId}`;
@@ -168,7 +173,7 @@ export default function RoleMatrixManager() {
     };
 
     const handleToggleAll = () => {
-        if (!activeRole) return;
+        if (!canEdit || !activeRole) return;
 
         const roleId = activeRole.role_id;
         const allPpIds: number[] = [];
@@ -223,7 +228,7 @@ export default function RoleMatrixManager() {
     };
 
     const handleSavePermissions = () => {
-        if (!activeRole) return;
+        if (!canEdit || !activeRole) return;
 
         const roleId = activeRole.role_id;
         const permissionsToSave: Array<{
@@ -282,6 +287,10 @@ export default function RoleMatrixManager() {
             }
         );
     };
+
+    if (!canView) {
+        return <AccessDeniedCard module="Permissions" />;
+    }
 
     const isLoading =
         isRolesLoading ||
@@ -392,6 +401,11 @@ export default function RoleMatrixManager() {
                                 <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-mono text-muted-foreground border border-border">
                                     ID: #{activeRole?.role_id}
                                 </span>
+                                {!canEdit && (
+                                    <span className="rounded-full bg-muted/80 px-2.5 py-0.5 text-[10px] font-semibold text-muted-foreground border border-border">
+                                        Read-Only
+                                    </span>
+                                )}
                             </div>
                             <p className="text-xs text-muted-foreground">
                                 What this role can access
@@ -470,12 +484,22 @@ export default function RoleMatrixManager() {
                                                             type="button"
                                                             role="checkbox"
                                                             aria-checked={isGiven}
+                                                            disabled={!canEdit}
                                                             onClick={() => handleToggleCell(ppId)}
-                                                            title={`${isGiven ? "Revoke" : "Grant"} ${col.label} for ${page.name}`}
-                                                            className={`size-7 sm:size-8 rounded-lg flex items-center justify-center transition-all cursor-pointer active:scale-95 ${isGiven
-                                                                ? "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90"
-                                                                : "border border-input bg-background hover:bg-muted/70 hover:border-primary/50 text-transparent"
-                                                                }`}
+                                                            title={
+                                                                !canEdit
+                                                                    ? `${isGiven ? "Granted" : "Not granted"} (Read-only)`
+                                                                    : `${isGiven ? "Revoke" : "Grant"} ${col.label} for ${page.name}`
+                                                            }
+                                                            className={`size-7 sm:size-8 rounded-lg flex items-center justify-center transition-all ${
+                                                                !canEdit
+                                                                    ? isGiven
+                                                                        ? "bg-primary text-primary-foreground opacity-75 cursor-default"
+                                                                        : "border border-input bg-background/50 text-transparent cursor-default"
+                                                                    : isGiven
+                                                                    ? "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 cursor-pointer active:scale-95"
+                                                                    : "border border-input bg-background hover:bg-muted/70 hover:border-primary/50 text-transparent cursor-pointer active:scale-95"
+                                                            }`}
                                                         >
                                                             <Check className="size-4 stroke-[3]" />
                                                         </button>
@@ -500,46 +524,54 @@ export default function RoleMatrixManager() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
-                    <button
-                        type="button"
-                        onClick={handleToggleAll}
-                        className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                    >
-                        <SlidersHorizontal className="size-3.5 text-primary" />
-                        <span>Toggle page access</span>
-                    </button>
+                    {canEdit ? (
+                        <button
+                            type="button"
+                            onClick={handleToggleAll}
+                            className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                        >
+                            <SlidersHorizontal className="size-3.5 text-primary" />
+                            <span>Toggle page access</span>
+                        </button>
+                    ) : (
+                        <span className="text-xs text-muted-foreground italic">
+                            Viewing permissions in read-only mode
+                        </span>
+                    )}
 
-                    <div className="flex items-center gap-2">
-                        {pendingChangesCount > 0 && (
+                    {canEdit && (
+                        <div className="flex items-center gap-2">
+                            {pendingChangesCount > 0 && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleReset}
+                                    disabled={isSaving}
+                                    className="text-xs h-9 cursor-pointer gap-1.5"
+                                >
+                                    <RotateCcw className="size-3.5" />
+                                    Reset
+                                </Button>
+                            )}
+
                             <Button
                                 type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={handleReset}
-                                disabled={isSaving}
-                                className="text-xs h-9 cursor-pointer gap-1.5"
+                                onClick={handleSavePermissions}
+                                disabled={isSaving || pendingChangesCount === 0}
+                                className="h-9 px-5 rounded-lg text-xs font-semibold cursor-pointer shadow-xs gap-1.5"
                             >
-                                <RotateCcw className="size-3.5" />
-                                Reset
+                                {isSaving ? (
+                                    <>
+                                        <span className="size-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                                        <span>Saving...</span>
+                                    </>
+                                ) : (
+                                    <span>Save Permissions</span>
+                                )}
                             </Button>
-                        )}
-
-                        <Button
-                            type="button"
-                            onClick={handleSavePermissions}
-                            disabled={isSaving || pendingChangesCount === 0}
-                            className="h-9 px-5 rounded-lg text-xs font-semibold cursor-pointer shadow-xs gap-1.5"
-                        >
-                            {isSaving ? (
-                                <>
-                                    <span className="size-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                                    <span>Saving...</span>
-                                </>
-                            ) : (
-                                <span>Save Permissions</span>
-                            )}
-                        </Button>
-                    </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

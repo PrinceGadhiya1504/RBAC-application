@@ -11,13 +11,6 @@ export const fetchPositions = async (): Promise<PositionsResponse> => {
     return response.data;
 };
 
-export const fetchPositionById = async (
-    positionId: number
-): Promise<SinglePositionResponse> => {
-    const response = await api.get<SinglePositionResponse>(`/positions/${positionId}`);
-    return response.data;
-};
-
 export const createPosition = async (
     data: CreatePositionRequest
 ): Promise<SinglePositionResponse> => {

@@ -7,9 +7,3 @@ export interface PermissionsResponse {
     success: boolean;
     permissions: Permission[];
 }
-
-export interface PermissionResponse {
-    success: boolean;
-    permission: Permission;
-    message?: string;
-}

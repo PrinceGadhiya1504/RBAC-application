@@ -12,10 +12,13 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useModulePermissions } from "@/features/auth/hooks/useModulePermissions";
+import AccessDeniedCard from "@/features/auth/components/AccessDeniedCard";
 import { Shield, Plus, Edit2, Trash2, Users } from "lucide-react";
 import axios from "axios";
 
 export default function RolesTable() {
+    const { canView, canCreate, canUpdate, canDelete } = useModulePermissions("Roles");
     const { data: rolesData, isPending, isError, error } = useRoles();
     const { data: userRolesData } = useAllUserRoles();
     const {
@@ -36,6 +39,10 @@ export default function RolesTable() {
     for (const assignment of userRoles) {
         roleUserCounts[assignment.role_id] =
             (roleUserCounts[assignment.role_id] || 0) + 1;
+    }
+
+    if (!canView) {
+        return <AccessDeniedCard module="Roles" />;
     }
 
     if (isPending) {
@@ -75,10 +82,12 @@ export default function RolesTable() {
                     </p>
                 </div>
 
-                <Button onClick={() => setIsCreateOpen(true)} className="gap-2 shadow-sm">
-                    <Plus className="size-4" />
-                    Create Role
-                </Button>
+                {canCreate && (
+                    <Button onClick={() => setIsCreateOpen(true)} className="gap-2 shadow-sm cursor-pointer">
+                        <Plus className="size-4" />
+                        Create Role
+                    </Button>
+                )}
             </div>
 
             <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
@@ -89,7 +98,9 @@ export default function RolesTable() {
                             <th className="px-4 py-3 font-semibold">Role Name</th>
                             <th className="px-4 py-3 font-semibold">Description</th>
                             <th className="px-4 py-3 font-semibold">Members</th>
-                            <th className="px-4 py-3 font-semibold text-right">Actions</th>
+                            {(canUpdate || canDelete) && (
+                                <th className="px-4 py-3 font-semibold text-right">Actions</th>
+                            )}
                         </tr>
                     </thead>
 
@@ -118,44 +129,50 @@ export default function RolesTable() {
                                         <span>{roleUserCounts[role.role_id] || 0} users</span>
                                     </div>
                                 </td>
-                                <td className="px-4 py-3 text-right">
-                                    <div className="flex items-center justify-end gap-2">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => setSelectedRole(role)}
-                                            className="h-8 gap-1.5"
-                                        >
-                                            <Edit2 className="size-3.5" />
-                                            Edit
-                                        </Button>
+                                {(canUpdate || canDelete) && (
+                                    <td className="px-4 py-3 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            {canUpdate && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => setSelectedRole(role)}
+                                                    className="h-8 gap-1.5 cursor-pointer"
+                                                >
+                                                    <Edit2 className="size-3.5" />
+                                                    Edit
+                                                </Button>
+                                            )}
 
-                                        <Button
-                                            size="sm"
-                                            variant="destructive"
-                                            disabled={isDeleting}
-                                            onClick={() => {
-                                                const confirmed = window.confirm(
-                                                    `Are you sure you want to delete the "${role.name}" role?`
-                                                );
+                                            {canDelete && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="destructive"
+                                                    disabled={isDeleting}
+                                                    onClick={() => {
+                                                        const confirmed = window.confirm(
+                                                            `Are you sure you want to delete the "${role.name}" role?`
+                                                        );
 
-                                                if (confirmed) {
-                                                    deleteRole(role.role_id);
-                                                }
-                                            }}
-                                            className="h-8 gap-1.5"
-                                        >
-                                            <Trash2 className="size-3.5" />
-                                            Delete
-                                        </Button>
-                                    </div>
-                                </td>
+                                                        if (confirmed) {
+                                                            deleteRole(role.role_id);
+                                                        }
+                                                    }}
+                                                    className="h-8 gap-1.5 cursor-pointer"
+                                                >
+                                                    <Trash2 className="size-3.5" />
+                                                    Delete
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </td>
+                                )}
                             </tr>
                         ))}
 
                         {rolesList.length === 0 && (
                             <tr>
-                                <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                                <td colSpan={canUpdate || canDelete ? 5 : 4} className="p-8 text-center text-muted-foreground">
                                     No roles found.
                                 </td>
                             </tr>

@@ -42,7 +42,12 @@ export default function Sidebar({
     mobileOpen,
     onCloseMobile,
 }: SidebarProps) {
-    const { user, logout } = useAuth();
+    const { user, logout, canAccessPage } = useAuth();
+
+    const visibleNavItems = navItems.filter((item) => {
+        if (!item.pageName) return true;
+        return canAccessPage(item.pageName);
+    });
 
     const initials = user?.full_name
         ? user.full_name
@@ -102,7 +107,7 @@ export default function Sidebar({
                 </div>
 
                 <nav className="p-3 space-y-1.5">
-                    {navItems.map((item) => (
+                    {visibleNavItems.map((item) => (
                         <NavLink
                             key={item.path}
                             to={item.path}

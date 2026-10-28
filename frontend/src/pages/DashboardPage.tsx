@@ -12,13 +12,15 @@ import {
     ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useModulePermissions } from "@/features/auth/hooks/useModulePermissions";
 import { useUsers } from "@/features/users/hooks/useUsers";
 import { useRoles } from "@/features/roles/hooks/useRoles";
 import { usePositions } from "@/features/positions/hooks/usePositions";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardPage() {
-    const { user } = useAuth();
+    const { user, canAccessPage } = useAuth();
+    const { canView: canViewUsers } = useModulePermissions("Users");
     const { data: usersData } = useUsers();
     const { data: rolesData } = useRoles();
     const { data: positionsData } = usePositions();
@@ -31,6 +33,7 @@ export default function DashboardPage() {
     const statCards = [
         {
             title: "Total Users",
+            pageName: "Users",
             value: usersCount,
             subtitle: "Registered in system",
             icon: Users,
@@ -40,6 +43,7 @@ export default function DashboardPage() {
         },
         {
             title: "Total Roles",
+            pageName: "Roles",
             value: rolesCount,
             subtitle: "Defined access roles",
             icon: Shield,
@@ -49,6 +53,7 @@ export default function DashboardPage() {
         },
         {
             title: "Permissions Matrix",
+            pageName: "Permissions",
             value: "Active",
             subtitle: "Page-level control",
             icon: KeyRound,
@@ -58,6 +63,7 @@ export default function DashboardPage() {
         },
         {
             title: "Job Positions",
+            pageName: "Positions",
             value: positionsCount,
             subtitle: "Organizational titles",
             icon: Briefcase,
@@ -66,6 +72,8 @@ export default function DashboardPage() {
             link: "/positions",
         },
     ];
+
+    const visibleStatCards = statCards.filter((card) => canAccessPage(card.pageName));
 
     return (
         <div className="space-y-8">
@@ -80,53 +88,57 @@ export default function DashboardPage() {
                             <span className="text-xs text-muted-foreground">RBAC Control Center</span>
                         </div>
                         <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mt-2">
-                            Hello, {user?.full_name ?? "Administrator"}!
+                            Hello, {user?.full_name ?? "Administrator"} !
                         </h2>
                         <p className="mt-1 text-sm text-muted-foreground max-w-xl">
                             Here is the current overview of your access management system, registered users, and security roles.
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <Link to="/users">
-                            <Button className="gap-2 shadow-sm">
-                                <Users className="size-4" />
-                                Manage Users
-                            </Button>
-                        </Link>
-                    </div>
+                    {canViewUsers && (
+                        <div className="flex items-center gap-3">
+                            <Link to="/users">
+                                <Button className="gap-2 shadow-sm cursor-pointer">
+                                    <Users className="size-4" />
+                                    Manage Users
+                                </Button>
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {statCards.map((card) => (
-                    <Link
-                        key={card.title}
-                        to={card.link}
-                        className="group relative rounded-xl border bg-card p-5 shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5"
-                    >
-                        <div className="flex items-center justify-between">
-                            <div className={`flex size-10 items-center justify-center rounded-xl ${card.bg}`}>
-                                <card.icon className={`size-5 ${card.color}`} />
+            {visibleStatCards.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {visibleStatCards.map((card) => (
+                        <Link
+                            key={card.title}
+                            to={card.link}
+                            className="group relative rounded-xl border bg-card p-5 shadow-sm transition-all duration-200 hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className={`flex size-10 items-center justify-center rounded-xl ${card.bg}`}>
+                                    <card.icon className={`size-5 ${card.color}`} />
+                                </div>
+                                <ArrowUpRight className="size-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
                             </div>
-                            <ArrowUpRight className="size-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-primary" />
-                        </div>
-                        <div className="mt-4">
-                            <span className="text-xs font-medium text-muted-foreground">
-                                {card.title}
-                            </span>
-                            <p className="text-2xl font-bold tracking-tight text-foreground mt-0.5">
-                                {card.value}
-                            </p>
-                            <span className="text-xs text-muted-foreground">
-                                {card.subtitle}
-                            </span>
-                        </div>
-                    </Link>
-                ))}
-            </div>
+                            <div className="mt-4">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                    {card.title}
+                                </span>
+                                <p className="text-2xl font-bold tracking-tight text-foreground mt-0.5">
+                                    {card.value}
+                                </p>
+                                <span className="text-xs text-muted-foreground">
+                                    {card.subtitle}
+                                </span>
+                            </div>
+                        </Link>
+                    ))}
+                </div>
+            )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className={`grid grid-cols-1 ${canViewUsers ? "lg:grid-cols-3" : "max-w-xl"} gap-6`}>
                 <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
                     <div className="flex items-center gap-2 border-b pb-3">
                         <UserCheck className="size-5 text-primary" />
@@ -189,58 +201,60 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                <div className="lg:col-span-2 rounded-xl border bg-card p-6 shadow-sm space-y-4">
-                    <div className="flex items-center justify-between border-b pb-3">
-                        <div className="flex items-center gap-2">
-                            <Users className="size-5 text-primary" />
-                            <h3 className="font-semibold text-base text-foreground">Recent Users</h3>
+                {canViewUsers && (
+                    <div className="lg:col-span-2 rounded-xl border bg-card p-6 shadow-sm space-y-4">
+                        <div className="flex items-center justify-between border-b pb-3">
+                            <div className="flex items-center gap-2">
+                                <Users className="size-5 text-primary" />
+                                <h3 className="font-semibold text-base text-foreground">Recent Users</h3>
+                            </div>
+                            <Link to="/users" className="text-xs font-medium text-primary hover:underline">
+                                View All ({usersCount}) →
+                            </Link>
                         </div>
-                        <Link to="/users" className="text-xs font-medium text-primary hover:underline">
-                            View All ({usersCount}) →
-                        </Link>
-                    </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="text-xs uppercase tracking-wider text-muted-foreground border-b bg-muted/30">
-                                <tr>
-                                    <th className="px-3 py-2 font-medium">Name</th>
-                                    <th className="px-3 py-2 font-medium">Email</th>
-                                    <th className="px-3 py-2 font-medium">Contact</th>
-                                    <th className="px-3 py-2 font-medium">Joined</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-border text-xs">
-                                {recentUsers.map((u) => (
-                                    <tr key={u.user_id} className="hover:bg-muted/20 transition-colors">
-                                        <td className="px-3 py-2.5 font-medium text-foreground">
-                                            {u.full_name}
-                                        </td>
-                                        <td className="px-3 py-2.5 text-muted-foreground">
-                                            {u.email}
-                                        </td>
-                                        <td className="px-3 py-2.5 text-muted-foreground">
-                                            {u.contact_number || "—"}
-                                        </td>
-                                        <td className="px-3 py-2.5 text-muted-foreground">
-                                            {u.date_of_joining
-                                                ? new Date(u.date_of_joining).toLocaleDateString()
-                                                : "-"}
-                                        </td>
-                                    </tr>
-                                ))}
-
-                                {recentUsers.length === 0 && (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                                <thead className="text-xs uppercase tracking-wider text-muted-foreground border-b bg-muted/30">
                                     <tr>
-                                        <td colSpan={4} className="py-6 text-center text-muted-foreground">
-                                            No users available.
-                                        </td>
+                                        <th className="px-3 py-2 font-medium">Name</th>
+                                        <th className="px-3 py-2 font-medium">Email</th>
+                                        <th className="px-3 py-2 font-medium">Contact</th>
+                                        <th className="px-3 py-2 font-medium">Joined</th>
                                     </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-border text-xs">
+                                    {recentUsers.map((u) => (
+                                        <tr key={u.user_id} className="hover:bg-muted/20 transition-colors">
+                                            <td className="px-3 py-2.5 font-medium text-foreground">
+                                                {u.full_name}
+                                            </td>
+                                            <td className="px-3 py-2.5 text-muted-foreground">
+                                                {u.email}
+                                            </td>
+                                            <td className="px-3 py-2.5 text-muted-foreground">
+                                                {u.contact_number || "—"}
+                                            </td>
+                                            <td className="px-3 py-2.5 text-muted-foreground">
+                                                {u.date_of_joining
+                                                    ? new Date(u.date_of_joining).toLocaleDateString()
+                                                    : "-"}
+                                            </td>
+                                        </tr>
+                                    ))}
+
+                                    {recentUsers.length === 0 && (
+                                        <tr>
+                                            <td colSpan={4} className="py-6 text-center text-muted-foreground">
+                                                No users available.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );

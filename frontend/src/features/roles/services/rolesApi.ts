@@ -11,11 +11,6 @@ export const fetchRoles = async (): Promise<RolesResponse> => {
     return response.data;
 };
 
-export const fetchRoleById = async (roleId: number): Promise<Role> => {
-    const response = await api.get<{ success: boolean; role: Role }>(`/roles/${roleId}`);
-    return response.data.role;
-};
-
 export const createRole = async (roleData: CreateRoleRequest): Promise<Role> => {
     const response = await api.post<{ success: boolean; role: Role }>("/roles", roleData);
     return response.data.role;
