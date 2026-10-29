@@ -1,11 +1,21 @@
-import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from "react";
+import {
+    createContext,
+    useContext,
+    useState,
+    useEffect,
+    useCallback,
+    useMemo,
+    type ReactNode,
+} from "react";
 import type { AuthUser } from "../types/auth.types";
 import {
     getAccessToken,
     getAuthUser,
     saveAuthData,
+    updateAuthUser,
     clearAuthData,
 } from "../utils/authStorage";
+import { fetchProfile } from "../services/authApi";
 
 interface AuthContextType {
     user: AuthUser | null;
@@ -16,6 +26,7 @@ interface AuthContextType {
     hasRole: (role: string) => boolean;
     hasPermission: (page: string, permission: string) => boolean;
     canAccessPage: (page: string) => boolean;
+    refreshProfile: () => Promise<AuthUser | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,6 +44,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         window.addEventListener("storage", handleStorageChange);
         return () => window.removeEventListener("storage", handleStorageChange);
     }, []);
+
+    const refreshProfile = useCallback(async (): Promise<AuthUser | null> => {
+        const currentToken = getAccessToken();
+        if (!currentToken) return null;
+
+        try {
+            const data = await fetchProfile();
+            if (data?.success && data?.user) {
+                updateAuthUser(data.user);
+                setUser(data.user);
+                return data.user;
+            }
+        } catch (err) {
+            console.error("Failed to refresh user profile / permissions:", err);
+        }
+        return null;
+    }, []);
+
+    // 1. Synchronize permissions immediately on page mount / refresh
+    useEffect(() => {
+        if (token) {
+            refreshProfile();
+        }
+    }, [token, refreshProfile]);
+
+    // 2. Synchronize permissions when window/tab gains focus
+    useEffect(() => {
+        const handleFocus = () => {
+            if (getAccessToken()) {
+                refreshProfile();
+            }
+        };
+
+        window.addEventListener("focus", handleFocus);
+        return () => window.removeEventListener("focus", handleFocus);
+    }, [refreshProfile]);
 
     const login = (newToken: string, newUser: AuthUser) => {
         saveAuthData(newToken, newUser);
@@ -76,8 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             hasRole,
             hasPermission,
             canAccessPage,
+            refreshProfile,
         }),
-        [user, token]
+        [user, token, refreshProfile]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

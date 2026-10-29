@@ -1,5 +1,5 @@
 import { api } from "@/lib/api";
-import type { LoginRequest, LoginResponse } from "../types/auth.types";
+import type { LoginRequest, LoginResponse, ProfileResponse } from "../types/auth.types";
 
 export const loginUser = async (
     credentials: LoginRequest
@@ -9,5 +9,10 @@ export const loginUser = async (
         credentials
     );
 
+    return response.data;
+};
+
+export const fetchProfile = async (): Promise<ProfileResponse> => {
+    const response = await api.get<ProfileResponse>("/auth/profile");
     return response.data;
 };

@@ -8,6 +8,10 @@ export const saveAuthData = (token: string, user: AuthUser) => {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
 };
 
+export const updateAuthUser = (user: AuthUser) => {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+};
+
 export const getAccessToken = () => {
     return localStorage.getItem(TOKEN_KEY);
 };

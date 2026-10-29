@@ -6,6 +6,7 @@ import { usePagePermissions } from "@/features/pagePermissions/hooks/usePagePerm
 import { useRolePagePermissions } from "../hooks/useRolePagePermissions";
 import { useBulkSaveRolePagePermissions } from "../hooks/useBulkSaveRolePagePermissions";
 import { useModulePermissions } from "@/features/auth/hooks/useModulePermissions";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import AccessDeniedCard from "@/features/auth/components/AccessDeniedCard";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,7 @@ const STANDARD_COLUMNS: StandardColumn[] = [
 ];
 
 export default function RoleMatrixManager() {
+    const { refreshProfile } = useAuth();
     const { canView, canUpdate, canCreate } = useModulePermissions("Permissions");
     const canEdit = canUpdate || canCreate;
 
@@ -271,6 +273,12 @@ export default function RoleMatrixManager() {
                         return next;
                     });
                     setSuccessMessage(`Permissions successfully saved for ${activeRole.name}!`);
+                    refreshProfile();
+                    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+                        const channel = new BroadcastChannel("rbac_permissions_channel");
+                        channel.postMessage({ type: "PERMISSIONS_UPDATED" });
+                        channel.close();
+                    }
                     setTimeout(() => setSuccessMessage(null), 4000);
                 },
                 onError: (err) => {
