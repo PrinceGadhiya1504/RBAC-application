@@ -11,25 +11,23 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { useModulePermissions } from "@/features/auth/hooks/useModulePermissions";
 import AccessDeniedCard from "@/features/auth/components/AccessDeniedCard";
-import { Shield, Plus, Edit2, Trash2, Users } from "lucide-react";
-import axios from "axios";
+import { Shield, Users } from "lucide-react";
+import { useToast } from "@/hooks/useToast";
 
 export default function RolesTable() {
+    const toast = useToast();
     const { canView, canCreate, canUpdate, canDelete } = useModulePermissions("Roles");
     const { data: rolesData, isPending, isError, error } = useRoles();
     const { data: userRolesData } = useAllUserRoles();
-    const {
-        mutate: deleteRole,
-        isPending: isDeleting,
-        isError: isDeleteError,
-        error: deleteError,
-    } = useDeleteRole();
+    const { mutate: deleteRole, isPending: isDeleting } = useDeleteRole();
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+    const [deletingRole, setDeletingRole] = useState<Role | null>(null);
 
     const rolesList = rolesData?.roles || [];
     const userRoles = userRolesData?.user_roles || [];
@@ -59,7 +57,7 @@ export default function RolesTable() {
     if (isError) {
         return (
             <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-destructive">
-                <p className="text-sm font-medium">{error.message || "Failed to load roles."}</p>
+                <p className="text-sm font-medium">{(error as any)?.response?.data?.message || error?.message || "Failed to load roles."}</p>
             </div>
         );
     }
@@ -83,8 +81,7 @@ export default function RolesTable() {
                 </div>
 
                 {canCreate && (
-                    <Button onClick={() => setIsCreateOpen(true)} className="gap-2 shadow-sm cursor-pointer">
-                        <Plus className="size-4" />
+                    <Button onClick={() => setIsCreateOpen(true)} className="shadow-sm cursor-pointer">
                         Create Role
                     </Button>
                 )}
@@ -99,7 +96,7 @@ export default function RolesTable() {
                             <th className="px-4 py-3 font-semibold">Description</th>
                             <th className="px-4 py-3 font-semibold">Members</th>
                             {(canUpdate || canDelete) && (
-                                <th className="px-4 py-3 font-semibold text-right">Actions</th>
+                                <th className="px-4 py-3 font-semibold">Actions</th>
                             )}
                         </tr>
                     </thead>
@@ -111,7 +108,7 @@ export default function RolesTable() {
                                 className="transition-colors hover:bg-muted/30"
                             >
                                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                                    #{role.role_id}
+                                    {role.role_id}
                                 </td>
                                 <td className="px-4 py-3 font-medium text-foreground">
                                     <div className="flex items-center gap-2">
@@ -130,37 +127,29 @@ export default function RolesTable() {
                                     </div>
                                 </td>
                                 {(canUpdate || canDelete) && (
-                                    <td className="px-4 py-3 text-right">
-                                        <div className="flex items-center justify-end gap-2">
+                                    <td className="px-4 py-3">
+                                        <div className="flex items-center gap-2">
                                             {canUpdate && (
                                                 <Button
+                                                    type="button"
                                                     size="sm"
                                                     variant="outline"
                                                     onClick={() => setSelectedRole(role)}
-                                                    className="h-8 gap-1.5 cursor-pointer"
+                                                    className="h-8 cursor-pointer"
                                                 >
-                                                    <Edit2 className="size-3.5" />
                                                     Edit
                                                 </Button>
                                             )}
 
-                                            {canDelete && (
+                                             {canDelete && (
                                                 <Button
+                                                    type="button"
                                                     size="sm"
                                                     variant="destructive"
                                                     disabled={isDeleting}
-                                                    onClick={() => {
-                                                        const confirmed = window.confirm(
-                                                            `Are you sure you want to delete the "${role.name}" role?`
-                                                        );
-
-                                                        if (confirmed) {
-                                                            deleteRole(role.role_id);
-                                                        }
-                                                    }}
-                                                    className="h-8 gap-1.5 cursor-pointer"
+                                                    onClick={() => setDeletingRole(role)}
+                                                    className="h-8 cursor-pointer"
                                                 >
-                                                    <Trash2 className="size-3.5" />
                                                     Delete
                                                 </Button>
                                             )}
@@ -172,8 +161,12 @@ export default function RolesTable() {
 
                         {rolesList.length === 0 && (
                             <tr>
-                                <td colSpan={canUpdate || canDelete ? 5 : 4} className="p-8 text-center text-muted-foreground">
-                                    No roles found.
+                                <td colSpan={canUpdate || canDelete ? 5 : 4} className="py-12 text-center">
+                                    <div className="flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
+                                        <Shield className="size-8 opacity-40" />
+                                        <p className="text-sm font-medium text-foreground">No roles found</p>
+                                        <p className="text-xs">There are no security roles to display.</p>
+                                    </div>
                                 </td>
                             </tr>
                         )}
@@ -181,15 +174,6 @@ export default function RolesTable() {
                 </table>
             </div>
 
-            {isDeleteError && (
-                <p className="text-sm text-destructive" role="alert">
-                    {axios.isAxiosError(deleteError)
-                        ? deleteError.response?.data?.message || "Failed to delete role."
-                        : deleteError.message || "Failed to delete role."}
-                </p>
-            )}
-
-            {/* Create Role Modal */}
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -203,7 +187,6 @@ export default function RolesTable() {
                 </DialogContent>
             </Dialog>
 
-            {/* Edit Role Modal */}
             <Dialog
                 open={selectedRole !== null}
                 onOpenChange={(open) => {
@@ -225,6 +208,27 @@ export default function RolesTable() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDialog
+                open={Boolean(deletingRole)}
+                onOpenChange={(open) => !open && setDeletingRole(null)}
+                title="Delete Role"
+                description="Are you sure you want to delete this role? This action cannot be undone."
+                isLoading={isDeleting}
+                onConfirm={() => {
+                    if (!deletingRole) return;
+                    deleteRole(deletingRole.role_id, {
+                        onSuccess: () => {
+                            toast.success("Role deleted successfully.");
+                            setDeletingRole(null);
+                        },
+                        onError: (err) => {
+                            toast.error(err, "Failed to delete role.");
+                            setDeletingRole(null);
+                        },
+                    });
+                }}
+            />
         </div>
     );
 }

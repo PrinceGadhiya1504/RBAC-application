@@ -1,19 +1,19 @@
 def validate_position_data(data):
-    errors = {}
+    if not isinstance(data, dict):
+        return "Request body must be a valid JSON object."
 
     name = data.get("name")
     description = data.get("description")
 
-    if name is not None:
-        if not isinstance(name, str):
-            errors["name"] = "Name must be a string."
-        elif len(name.strip()) > 100:
-            errors["name"] = "Name must not exceed 100 characters."
+    if not isinstance(name, str) or not name.strip():
+        return "Position name is required."
+    if len(name.strip()) > 100:
+        return "Position name must not exceed 100 characters."
 
     if description is not None:
         if not isinstance(description, str):
-            errors["description"] = "Description must be a string."
-        elif len(description) > 500:
-            errors["description"] = "Description must not exceed 500 characters."
+            return "Description must be a string."
+        if len(description) > 500:
+            return "Description must not exceed 500 characters."
 
-    return errors
+    return None

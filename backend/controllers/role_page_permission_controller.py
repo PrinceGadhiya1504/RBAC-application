@@ -1,5 +1,8 @@
 from flask import request, jsonify
-from schemas.role_page_permission_schema import validate_role_page_permission_data
+from schemas.role_page_permission_schema import (
+    validate_role_page_permission_data,
+    validate_bulk_role_page_permission_data,
+)
 from services.role_page_permission_service import (
     assign_permission_to_role,
     bulk_assign_permissions_to_role,
@@ -12,44 +15,33 @@ from services.role_page_permission_service import (
 def assign_permission_to_role_controller():
     data = request.get_json(silent=True)
 
-    if not isinstance(data, dict):
-        return jsonify({
-            "success": False,
-            "message": "Request body must be a valid JSON object."
-        }), 400
-
-    if "permissions" in data and isinstance(data["permissions"], list):
-        if not data.get("role_id"):
+    if isinstance(data, dict) and "permissions" in data:
+        error = validate_bulk_role_page_permission_data(data)
+        if error:
             return jsonify({
                 "success": False,
-                "message": "role_id is required."
+                "message": error
             }), 400
         try:
             response, status_code = bulk_assign_permissions_to_role(data)
             return jsonify(response), status_code
         except Exception:
-            import traceback
-            traceback.print_exc()
             return jsonify({
                 "success": False,
                 "message": "An internal server error occurred."
             }), 500
 
-    errors = validate_role_page_permission_data(data)
-
-    if errors:
+    error = validate_role_page_permission_data(data)
+    if error:
         return jsonify({
             "success": False,
-            "message": "Validation failed.",
-            "errors": errors
+            "message": error
         }), 400
 
     try:
         response, status_code = assign_permission_to_role(data)
         return jsonify(response), status_code
     except Exception:
-        import traceback
-        traceback.print_exc()
         return jsonify({
             "success": False,
             "message": "An internal server error occurred."
@@ -71,8 +63,6 @@ def get_role_page_permissions_controller(role_id):
         response, status_code = get_role_page_permissions(role_id)
         return jsonify(response), status_code
     except Exception:
-        import traceback
-        traceback.print_exc()
         return jsonify({
             "success": False,
             "message": "An internal server error occurred."
@@ -81,28 +71,11 @@ def get_role_page_permissions_controller(role_id):
 def update_role_page_permission_controller(role_page_permission_id):
     data = request.get_json(silent=True)
 
-    if not isinstance(data, dict):
+    error = validate_role_page_permission_data(data)
+    if error:
         return jsonify({
             "success": False,
-            "message": "Request body must be valid JSON."
-        }), 400
-
-    errors = validate_role_page_permission_data(data)
-
-    if errors:
-        return jsonify({
-            "success": False,
-            "message": "Validation failed.",
-            "errors": errors
-        }), 400
-
-    if "is_given" not in data:
-        return jsonify({
-            "success": False,
-            "message": "Validation failed.",
-            "errors": {
-                "is_given": "is_given is required and must be a boolean."
-            }
+            "message": error
         }), 400
 
     try:

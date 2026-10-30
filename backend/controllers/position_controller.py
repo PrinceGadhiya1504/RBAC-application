@@ -1,23 +1,15 @@
 from flask import request
 from schemas.position_schema import validate_position_data
-from services.position_service import create_position,get_all_positions,get_position_by_id,update_position,delete_position
+from services.position_service import create_position, get_all_positions, get_position_by_id, update_position, delete_position
 
 def create_position_controller():
     data = request.get_json(silent=True)
 
-    if not isinstance(data, dict):
+    error = validate_position_data(data)
+    if error:
         return {
             "success": False,
-            "message": "Request body must be a valid JSON object."
-        }, 400
-
-    errors = validate_position_data(data)
-
-    if errors:
-        return {
-            "success": False,
-            "message": "Validation failed.",
-            "errors": errors
+            "message": error
         }, 400
 
     return create_position(data)
@@ -31,19 +23,11 @@ def get_position_by_id_controller(position_id):
 def update_position_controller(position_id):
     data = request.get_json(silent=True)
 
-    if not isinstance(data, dict):
+    error = validate_position_data(data)
+    if error:
         return {
             "success": False,
-            "message": "Request body must be a valid JSON object."
-        }, 400
-
-    errors = validate_position_data(data)
-
-    if errors:
-        return {
-            "success": False,
-            "message": "Validation failed.",
-            "errors": errors
+            "message": error
         }, 400
 
     return update_position(position_id, data)

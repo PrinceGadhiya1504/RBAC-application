@@ -8,13 +8,12 @@ from models.user import User
 def register():
     data = request.get_json(silent=True)
 
-    errors = validate_register_data(data)
+    error = validate_register_data(data)
 
-    if errors:
+    if error:
         return jsonify({
             "success": False,
-            "message": "Validation failed.",
-            "errors": errors,
+            "message": error,
         }), 400
 
     try:
@@ -33,13 +32,12 @@ def register():
 def login():
     data = request.get_json(silent=True)
 
-    errors = validate_login_data(data)
+    error = validate_login_data(data)
 
-    if errors:
+    if error:
         return jsonify({
             "success": False,
-            "message": "Validation failed.",
-            "errors": errors,
+            "message": error,
         }), 400
 
     try:

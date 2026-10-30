@@ -5,6 +5,7 @@ import type { LoginRequest, LoginResponse } from "../types/auth.types";
 
 export const useLogin = (options?: {
     onSuccess?: (data: LoginResponse) => void;
+    onError?: (error: Error) => void;
 }) => {
     const { login } = useAuth();
 
@@ -14,6 +15,10 @@ export const useLogin = (options?: {
         onSuccess: (data) => {
             login(data.access_token, data.user);
             options?.onSuccess?.(data);
+        },
+
+        onError: (error) => {
+            options?.onError?.(error);
         },
     });
 };

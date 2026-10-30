@@ -11,44 +11,26 @@ def get_page_by_id_controller(page_id):
 def create_page_controller():
     data = request.get_json(silent=True)
 
-    if not isinstance(data, dict):
+    error = validate_page_data(data)
+    if error:
         return {
             "success": False,
-            "message": "Request body must be a valid JSON object."
-        }, 400
-
-    errors = validate_page_data(data)
-
-    if errors:
-        return {
-            "success": False,
-            "message": "Validation failed.",
-            "errors": errors
+            "message": error
         }, 400
 
     return create_page(data)
-    
 
 def update_page_controller(page_id):
     data = request.get_json(silent=True)
 
-    if not isinstance(data, dict):
+    error = validate_page_data(data)
+    if error:
         return {
             "success": False,
-            "message": "Request body must be a valid JSON object."
-        }, 400
-
-    errors = validate_page_data(data)
-
-    if errors:
-        return {
-            "success": False,
-            "message": "Validation failed.",
-            "errors": errors
+            "message": error
         }, 400
 
     return update_page(page_id, data)
-
 
 def delete_page_controller(page_id):
     return delete_page(page_id)

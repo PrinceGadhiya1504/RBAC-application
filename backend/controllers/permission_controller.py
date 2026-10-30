@@ -11,19 +11,11 @@ def get_permission_by_id_controller(permission_id):
 def create_permission_controller():
     data = request.get_json(silent=True)
 
-    if not isinstance(data, dict):
+    error = validate_permission_data(data)
+    if error:
         return {
             "success": False,
-            "message": "Request body must be a valid JSON object."
-        }, 400
-
-    errors = validate_permission_data(data)
-
-    if errors:
-        return {
-            "success": False,
-            "message": "Validation failed.",
-            "errors": errors
+            "message": error
         }, 400
 
     return create_permission(data)
@@ -31,19 +23,11 @@ def create_permission_controller():
 def update_permission_controller(permission_id):
     data = request.get_json(silent=True)
 
-    if not isinstance(data, dict):
+    error = validate_permission_data(data)
+    if error:
         return {
             "success": False,
-            "message": "Request body must be a valid JSON object."
-        }, 400
-
-    errors = validate_permission_data(data)
-
-    if errors:
-        return {
-            "success": False,
-            "message": "Validation failed.",
-            "errors": errors
+            "message": error
         }, 400
 
     return update_permission(permission_id, data)

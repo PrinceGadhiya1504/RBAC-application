@@ -5,19 +5,11 @@ from services.user_role_service import assign_role_to_user, get_all_user_roles, 
 def assign_role_controller():
     data = request.get_json(silent=True)
 
-    if not isinstance(data, dict):
+    error = validate_user_role_data(data)
+    if error:
         return jsonify({
             "success": False,
-            "message": "Request body must be valid JSON."
-        }), 400
-
-    errors = validate_user_role_data(data)
-
-    if errors:
-        return jsonify({
-            "success": False,
-            "message": "Validation failed.",
-            "errors": errors
+            "message": error
         }), 400
 
     try:
@@ -55,19 +47,11 @@ def get_user_roles_controller(user_id):
 def update_user_role_controller(user_role_id):
     data = request.get_json(silent=True)
 
-    if not isinstance(data, dict):
+    error = validate_user_role_data(data)
+    if error:
         return jsonify({
             "success": False,
-            "message": "Request body must be valid JSON."
-        }), 400
-
-    errors = validate_user_role_data(data)
-
-    if errors:
-        return jsonify({
-            "success": False,
-            "message": "Validation failed.",
-            "errors": errors
+            "message": error
         }), 400
 
     try:

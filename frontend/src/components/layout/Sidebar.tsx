@@ -8,7 +8,6 @@ import {
     ShieldCheck,
     ChevronLeft,
     ChevronRight,
-    LogOut,
     X,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -42,7 +41,7 @@ export default function Sidebar({
     mobileOpen,
     onCloseMobile,
 }: SidebarProps) {
-    const { user, logout, canAccessPage } = useAuth();
+    const { user, canAccessPage } = useAuth();
 
     const visibleNavItems = navItems.filter((item) => {
         if (!item.pageName) return true;
@@ -153,23 +152,11 @@ export default function Sidebar({
                                 {user?.email ?? ""}
                             </span>
                             {(user?.role || (user?.roles && user.roles.length > 0)) && (
-                                <span className="mt-1 inline-block w-fit rounded-full bg-primary/10 px-2 py-0.2 text-[10px] font-semibold text-primary">
+                                <span className="mt-1 inline-block w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
                                     {user.role || user.roles?.[0]}
                                 </span>
                             )}
                         </div>
-                    )}
-
-                    {!isCollapsed && (
-                        <button
-                            type="button"
-                            onClick={logout}
-                            title="Sign out"
-                            className="size-8 flex shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                            aria-label="Logout"
-                        >
-                            <LogOut className="size-4" />
-                        </button>
                     )}
                 </div>
             </div>

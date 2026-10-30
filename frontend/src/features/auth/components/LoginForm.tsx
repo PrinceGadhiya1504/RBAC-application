@@ -13,16 +13,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLogin } from "../hooks/useLogin";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/useToast";
 
 export default function LoginForm() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+    const toast = useToast();
 
-    const { mutate: login, isPending, isError, error } = useLogin({
+    const { mutate: login, isPending } = useLogin({
         onSuccess: () => {
+            toast.success("Login successful.");
             navigate("/dashboard");
+        },
+        onError: (err) => {
+            toast.error(err, "Failed to login.");
         },
     });
 
@@ -96,12 +102,6 @@ export default function LoginForm() {
                     <Button type="submit" className="w-full" disabled={isPending}>
                         {isPending ? "Signing in..." : "Sign In"}
                     </Button>
-
-                    {isError && (
-                        <p className="text-sm text-destructive" role="alert">
-                            {error.message || "Login failed. Please try again."}
-                        </p>
-                    )}
                 </form>
             </CardContent>
         </Card>

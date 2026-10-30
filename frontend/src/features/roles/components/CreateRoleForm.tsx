@@ -3,7 +3,7 @@ import { useCreateRole } from "../hooks/useCreateRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import axios from "axios";
+import { useToast } from "@/hooks/useToast";
 
 interface CreateRoleFormProps {
     onCancel?: () => void;
@@ -14,10 +14,11 @@ export default function CreateRoleForm({
     onCancel,
     onSuccess,
 }: CreateRoleFormProps) {
+    const toast = useToast();
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
 
-    const { mutate: createRole, isPending, isError, error } = useCreateRole();
+    const { mutate: createRole, isPending } = useCreateRole();
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -29,9 +30,13 @@ export default function CreateRoleForm({
             },
             {
                 onSuccess: () => {
+                    toast.success("Role created successfully.");
                     setName("");
                     setDescription("");
                     onSuccess?.();
+                },
+                onError: (err) => {
+                    toast.error(err, "Failed to create role.");
                 },
             }
         );
@@ -59,14 +64,6 @@ export default function CreateRoleForm({
                     placeholder="Brief summary of duties and permissions"
                 />
             </div>
-
-            {isError && (
-                <p className="text-sm text-destructive" role="alert">
-                    {axios.isAxiosError(error)
-                        ? error.response?.data?.message || "Failed to create role."
-                        : error.message || "Failed to create role."}
-                </p>
-            )}
 
             <div className="flex justify-end gap-2 pt-2">
                 {onCancel && (

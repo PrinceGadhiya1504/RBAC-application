@@ -6,7 +6,7 @@ import type { User } from "../types/user.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import axios from "axios";
+import { useToast } from "@/hooks/useToast";
 
 interface EditUserFormProps {
     user: User;
@@ -19,6 +19,7 @@ export default function EditUserForm({
     onCancel,
     onSuccess,
 }: EditUserFormProps) {
+    const toast = useToast();
     const [fullName, setFullName] = useState(user.full_name);
     const [email, setEmail] = useState(user.email);
     const [contactNumber, setContactNumber] = useState(user.contact_number ?? "");
@@ -32,7 +33,7 @@ export default function EditUserForm({
         user.position_id ? String(user.position_id) : ""
     );
 
-    const { mutate: updateUser, isPending, isError, error } = useUpdateUser();
+    const { mutate: updateUser, isPending } = useUpdateUser();
     const { data: rolesData } = useRoles();
     const { data: positionsData } = usePositions();
 
@@ -56,7 +57,11 @@ export default function EditUserForm({
             },
             {
                 onSuccess: () => {
+                    toast.success("User updated successfully.");
                     onSuccess();
+                },
+                onError: (err) => {
+                    toast.error(err, "Failed to update user.");
                 },
             }
         );
@@ -144,14 +149,6 @@ export default function EditUserForm({
                     </select>
                 </div>
             </div>
-
-            {isError && (
-                <p className="text-sm text-destructive" role="alert">
-                    {axios.isAxiosError(error)
-                        ? error.response?.data?.message || "Failed to update user."
-                        : error.message || "Failed to update user."}
-                </p>
-            )}
 
             <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -6,6 +7,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useUsers } from "../hooks/useUsers";
 import type { User } from "../types/user.types";
 import EditUserForm from "./EditUserForm";
@@ -13,21 +15,19 @@ import CreateUserForm from "./CreateUserForm";
 import { useDeleteUser } from "../hooks/useDeleteUser";
 import { useModulePermissions } from "@/features/auth/hooks/useModulePermissions";
 import AccessDeniedCard from "@/features/auth/components/AccessDeniedCard";
-import { Edit2, Trash2, Users, UserPlus } from "lucide-react";
-import axios from "axios";
+import { Users } from "lucide-react";
+import { useToast } from "@/hooks/useToast";
 
 export default function UsersTable() {
+    const toast = useToast();
+    const navigate = useNavigate();
     const { canView, canCreate, canUpdate: canEdit, canDelete } = useModulePermissions("Users");
 
     const { data, isPending, isError, error } = useUsers();
-    const {
-        mutate: deleteUser,
-        isPending: isDeleting,
-        isError: isDeleteError,
-        error: deleteError,
-    } = useDeleteUser();
+    const { mutate: deleteUser, isPending: isDeleting } = useDeleteUser();
 
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [deletingUser, setDeletingUser] = useState<User | null>(null);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
 
     if (!canView) {
@@ -48,7 +48,7 @@ export default function UsersTable() {
     if (isError) {
         return (
             <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-destructive">
-                <p className="text-sm font-medium">{error.message || "Failed to load users."}</p>
+                <p className="text-sm font-medium">{(error as any)?.response?.data?.message || error?.message || "Failed to load users."}</p>
             </div>
         );
     }
@@ -72,8 +72,7 @@ export default function UsersTable() {
                 </div>
 
                 {canCreate && (
-                    <Button onClick={() => setIsCreateOpen(true)} className="gap-2 shadow-sm cursor-pointer">
-                        <UserPlus className="size-4" />
+                    <Button onClick={() => setIsCreateOpen(true)} className="shadow-sm cursor-pointer">
                         Create User
                     </Button>
                 )}
@@ -83,28 +82,34 @@ export default function UsersTable() {
                 <table className="w-full text-left text-sm">
                     <thead className="border-b bg-muted/60 text-xs uppercase tracking-wider text-muted-foreground">
                         <tr>
-                            <th className="px-4 py-3 font-semibold">ID</th>
                             <th className="px-4 py-3 font-semibold">Full Name</th>
-                            <th className="px-4 py-3 font-semibold">Email</th>
-                            <th className="px-4 py-3 font-semibold">Role</th>
                             <th className="px-4 py-3 font-semibold">Position</th>
-                            <th className="px-4 py-3 font-semibold">Contact</th>
-                            <th className="px-4 py-3 font-semibold">Date Joined</th>
+                            <th className="px-4 py-3 font-semibold">Role</th>
                             <th className="px-4 py-3 font-semibold">Actions</th>
                         </tr>
                     </thead>
 
                     <tbody className="divide-y divide-border">
-                        {usersList.map((user, index) => (
-                            <tr key={user.user_id} className="transition-colors hover:bg-muted/30">
-                                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                                    #{index + 1}
-                                </td>
+                        {usersList.map((user) => (
+                            <tr
+                                key={user.user_id}
+                                onClick={() => {
+                                    sessionStorage.setItem("viewing_user_id", String(user.user_id));
+                                    navigate("/users/profile", { state: { user, userId: user.user_id } });
+                                }}
+                                className="transition-colors hover:bg-muted/30 cursor-pointer"
+                            >
                                 <td className="px-4 py-3 font-medium text-foreground">
                                     {user.full_name}
                                 </td>
-                                <td className="px-4 py-3 text-muted-foreground">
-                                    {user.email}
+                                <td className="px-4 py-3">
+                                    {user.position_name ? (
+                                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs">
+                                            {user.position_name}
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs text-muted-foreground italic">No position</span>
+                                    )}
                                 </td>
                                 <td className="px-4 py-3">
                                     {user.role_name ? (
@@ -116,59 +121,50 @@ export default function UsersTable() {
                                     )}
                                 </td>
                                 <td className="px-4 py-3">
-                                    {user.position_name ? (
-                                        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs">
-                                            {user.position_name}
-                                        </span>
-                                    ) : (
-                                        <span className="text-xs text-muted-foreground italic">No position</span>
-                                    )}
-                                </td>
-                                <td className="px-4 py-3 text-xs text-muted-foreground">
-                                    {user.contact_number || "-"}
-                                </td>
-                                <td className="px-4 py-3 text-xs text-muted-foreground">
-                                    {user.date_of_joining
-                                        ? new Date(user.date_of_joining).toLocaleDateString()
-                                        : "-"}
-                                </td>
-                                <td className="px-4 py-3">
                                     <div className="flex items-center gap-2">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                sessionStorage.setItem("viewing_user_id", String(user.user_id));
+                                                navigate("/users/profile", { state: { user, userId: user.user_id } });
+                                            }}
+                                            className="h-8 cursor-pointer"
+                                        >
+                                            View
+                                        </Button>
+
                                         {canEdit && (
                                             <Button
+                                                type="button"
                                                 size="sm"
                                                 variant="outline"
-                                                onClick={() => setSelectedUser(user)}
-                                                className="h-8 gap-1.5 cursor-pointer"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedUser(user);
+                                                }}
+                                                className="h-8 cursor-pointer"
                                             >
-                                                <Edit2 className="size-3.5" />
                                                 Edit
                                             </Button>
                                         )}
 
                                         {canDelete && (
                                             <Button
+                                                type="button"
                                                 size="sm"
                                                 variant="destructive"
                                                 disabled={isDeleting}
-                                                onClick={() => {
-                                                    const confirmed = window.confirm(
-                                                        `Are you sure you want to delete ${user.full_name}?`
-                                                    );
-
-                                                    if (confirmed) {
-                                                        deleteUser(user.user_id);
-                                                    }
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeletingUser(user);
                                                 }}
-                                                className="h-8 gap-1.5 cursor-pointer"
+                                                className="h-8 cursor-pointer"
                                             >
-                                                <Trash2 className="size-3.5" />
                                                 Delete
                                             </Button>
-                                        )}
-
-                                        {!canEdit && !canDelete && (
-                                            <span className="text-xs text-muted-foreground italic">Read-only</span>
                                         )}
                                     </div>
                                 </td>
@@ -177,24 +173,18 @@ export default function UsersTable() {
 
                         {usersList.length === 0 && (
                             <tr>
-                                <td colSpan={8} className="p-8 text-center text-muted-foreground">
-                                    No users found.
+                                <td colSpan={4} className="py-12 text-center">
+                                    <div className="flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
+                                        <Users className="size-8 opacity-40" />
+                                        <p className="text-sm font-medium text-foreground">No users found</p>
+                                        <p className="text-xs">There are no users to display.</p>
+                                    </div>
                                 </td>
                             </tr>
                         )}
                     </tbody>
                 </table>
             </div>
-
-            {isDeleteError && (
-                <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-destructive">
-                    <p className="text-sm font-medium">
-                        {axios.isAxiosError(deleteError)
-                            ? deleteError.response?.data?.message || "Failed to delete user."
-                            : deleteError.message || "Failed to delete user."}
-                    </p>
-                </div>
-            )}
 
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogContent className="sm:max-w-[480px]">
@@ -225,6 +215,27 @@ export default function UsersTable() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDialog
+                open={Boolean(deletingUser)}
+                onOpenChange={(open) => !open && setDeletingUser(null)}
+                title="Delete User"
+                description="Are you sure you want to delete this user? This action cannot be undone."
+                isLoading={isDeleting}
+                onConfirm={() => {
+                    if (!deletingUser) return;
+                    deleteUser(deletingUser.user_id, {
+                        onSuccess: () => {
+                            toast.success("User deleted successfully.");
+                            setDeletingUser(null);
+                        },
+                        onError: (err) => {
+                            toast.error(err, "Failed to delete user.");
+                            setDeletingUser(null);
+                        },
+                    });
+                }}
+            />
         </div>
     );
 }

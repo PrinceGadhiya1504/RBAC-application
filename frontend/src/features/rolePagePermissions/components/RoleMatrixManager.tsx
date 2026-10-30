@@ -9,15 +9,14 @@ import { useModulePermissions } from "@/features/auth/hooks/useModulePermissions
 import { useAuth } from "@/features/auth/context/AuthContext";
 import AccessDeniedCard from "@/features/auth/components/AccessDeniedCard";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/useToast";
 import {
     Shield,
     Check,
     AlertCircle,
-    CheckCircle2,
     SlidersHorizontal,
     RotateCcw,
 } from "lucide-react";
-import axios from "axios";
 
 interface StandardColumn {
     key: string;
@@ -33,6 +32,7 @@ const STANDARD_COLUMNS: StandardColumn[] = [
 ];
 
 export default function RoleMatrixManager() {
+    const toast = useToast();
     const { refreshProfile } = useAuth();
     const { canView, canUpdate, canCreate } = useModulePermissions("Permissions");
     const canEdit = canUpdate || canCreate;
@@ -64,8 +64,6 @@ export default function RoleMatrixManager() {
 
     const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
     const [localOverrides, setLocalOverrides] = useState<Record<string, boolean>>({});
-    const [actionError, setActionError] = useState<string | null>(null);
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     useEffect(() => {
         if (roles.length > 0 && selectedRoleId === null) {
@@ -169,9 +167,6 @@ export default function RoleMatrixManager() {
             }
             return next;
         });
-
-        setActionError(null);
-        setSuccessMessage(null);
     };
 
     const handleToggleAll = () => {
@@ -208,9 +203,6 @@ export default function RoleMatrixManager() {
             }
             return next;
         });
-
-        setActionError(null);
-        setSuccessMessage(null);
     };
 
     const handleReset = () => {
@@ -225,8 +217,6 @@ export default function RoleMatrixManager() {
             }
             return next;
         });
-        setActionError(null);
-        setSuccessMessage(null);
     };
 
     const handleSavePermissions = () => {
@@ -252,9 +242,6 @@ export default function RoleMatrixManager() {
             }
         }
 
-        setActionError(null);
-        setSuccessMessage(null);
-
         bulkSave(
             {
                 role_id: roleId,
@@ -272,25 +259,16 @@ export default function RoleMatrixManager() {
                         }
                         return next;
                     });
-                    setSuccessMessage(`Permissions successfully saved for ${activeRole.name}!`);
+                    toast.success("Permissions saved successfully.");
                     refreshProfile();
                     if (typeof window !== "undefined" && "BroadcastChannel" in window) {
                         const channel = new BroadcastChannel("rbac_permissions_channel");
                         channel.postMessage({ type: "PERMISSIONS_UPDATED" });
                         channel.close();
                     }
-                    setTimeout(() => setSuccessMessage(null), 4000);
                 },
                 onError: (err) => {
-                    if (axios.isAxiosError(err)) {
-                        setActionError(
-                            err.response?.data?.message || "Failed to save permissions."
-                        );
-                    } else {
-                        setActionError(
-                            (err as Error).message || "Failed to save permissions."
-                        );
-                    }
+                    toast.error(err, "Failed to save permissions.");
                 },
             }
         );
@@ -324,7 +302,7 @@ export default function RoleMatrixManager() {
                 <div className="flex items-center gap-2">
                     <AlertCircle className="size-4 shrink-0" />
                     <p className="text-sm font-medium">
-                        {(error as Error)?.message || "Failed to load permissions."}
+                        {(error as any)?.response?.data?.message || error?.message || "Failed to load permissions configuration."}
                     </p>
                 </div>
             </div>
@@ -381,20 +359,6 @@ export default function RoleMatrixManager() {
                 )}
             </div>
 
-            {actionError && (
-                <div className="flex items-center gap-2.5 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive">
-                    <AlertCircle className="size-4 shrink-0" />
-                    <span>{actionError}</span>
-                </div>
-            )}
-
-            {successMessage && (
-                <div className="flex items-center gap-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 className="size-4 shrink-0" />
-                    <span>{successMessage}</span>
-                </div>
-            )}
-
             <div className="rounded-2xl border bg-card p-5 sm:p-6 shadow-sm space-y-5 text-card-foreground">
                 <div className="flex items-center justify-between pb-1 border-b border-border">
                     <div className="flex items-center gap-3 pb-3">
@@ -406,9 +370,6 @@ export default function RoleMatrixManager() {
                                 <h3 className="text-lg font-bold tracking-tight text-foreground">
                                     {activeRole?.name}
                                 </h3>
-                                <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-mono text-muted-foreground border border-border">
-                                    ID: #{activeRole?.role_id}
-                                </span>
                                 {!canEdit && (
                                     <span className="rounded-full bg-muted/80 px-2.5 py-0.5 text-[10px] font-semibold text-muted-foreground border border-border">
                                         Read-Only
@@ -422,17 +383,17 @@ export default function RoleMatrixManager() {
                     </div>
                 </div>
 
-                <div className="overflow-x-auto rounded-xl border bg-card shadow-xs">
+                <div className="overflow-x-auto rounded-xl border bg-card shadow-xs max-h-[620px]">
                     <table className="w-full text-left text-sm border-collapse">
-                        <thead>
-                            <tr className="border-b bg-muted/60 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                <th className="px-5 py-3 font-semibold">
+                        <thead className="sticky top-0 z-10 bg-card">
+                            <tr className="border-b bg-muted/80 backdrop-blur text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                <th className="px-4 py-2.5 font-semibold">
                                     PAGE / MODULE
                                 </th>
                                 {resolvedColumns.map((col) => (
                                     <th
                                         key={col.key}
-                                        className="px-4 py-3 text-center font-semibold min-w-20 sm:min-w-24"
+                                        className="px-3 py-2.5 text-center font-semibold min-w-16 sm:min-w-20"
                                     >
                                         {col.label}
                                     </th>
@@ -447,7 +408,7 @@ export default function RoleMatrixManager() {
                                         key={page.page_id}
                                         className="transition-colors hover:bg-muted/30"
                                     >
-                                        <td className="px-5 py-3 font-medium text-foreground">
+                                        <td className="px-4 py-2 font-medium text-foreground">
                                             {page.name}
                                         </td>
 
@@ -456,7 +417,7 @@ export default function RoleMatrixManager() {
                                                 return (
                                                     <td
                                                         key={col.key}
-                                                        className="px-4 py-3 text-center text-muted-foreground/40 font-mono text-xs"
+                                                        className="px-3 py-2 text-center text-muted-foreground/40 font-mono text-xs"
                                                     >
                                                         —
                                                     </td>
@@ -471,7 +432,7 @@ export default function RoleMatrixManager() {
                                                 return (
                                                     <td
                                                         key={col.key}
-                                                        className="px-4 py-3 text-center text-muted-foreground/40 font-mono text-xs"
+                                                        className="px-3 py-2 text-center text-muted-foreground/40 font-mono text-xs"
                                                         title="Not applicable"
                                                     >
                                                         —
@@ -485,7 +446,7 @@ export default function RoleMatrixManager() {
                                             return (
                                                 <td
                                                     key={col.key}
-                                                    className="px-4 py-3 text-center"
+                                                    className="px-3 py-2 text-center"
                                                 >
                                                     <div className="flex items-center justify-center">
                                                         <button
@@ -499,17 +460,16 @@ export default function RoleMatrixManager() {
                                                                     ? `${isGiven ? "Granted" : "Not granted"} (Read-only)`
                                                                     : `${isGiven ? "Revoke" : "Grant"} ${col.label} for ${page.name}`
                                                             }
-                                                            className={`size-7 sm:size-8 rounded-lg flex items-center justify-center transition-all ${
-                                                                !canEdit
-                                                                    ? isGiven
-                                                                        ? "bg-primary text-primary-foreground opacity-75 cursor-default"
-                                                                        : "border border-input bg-background/50 text-transparent cursor-default"
-                                                                    : isGiven
+                                                            className={`size-5 rounded-md flex items-center justify-center transition-all ${!canEdit
+                                                                ? isGiven
+                                                                    ? "bg-primary text-primary-foreground opacity-75 cursor-default"
+                                                                    : "border border-input bg-background/50 text-transparent cursor-default"
+                                                                : isGiven
                                                                     ? "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 cursor-pointer active:scale-95"
                                                                     : "border border-input bg-background hover:bg-muted/70 hover:border-primary/50 text-transparent cursor-pointer active:scale-95"
-                                                            }`}
+                                                                }`}
                                                         >
-                                                            <Check className="size-4 stroke-[3]" />
+                                                            <Check className="size-3.5 stroke-[2.5]" />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -521,9 +481,13 @@ export default function RoleMatrixManager() {
                                 <tr>
                                     <td
                                         colSpan={resolvedColumns.length + 1}
-                                        className="py-12 text-center text-muted-foreground text-xs"
+                                        className="py-12 text-center"
                                     >
-                                        No system pages found.
+                                        <div className="flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
+                                            <Shield className="size-8 opacity-40" />
+                                            <p className="text-sm font-medium text-foreground">No system pages found</p>
+                                            <p className="text-xs">There are no pages configured for permissions.</p>
+                                        </div>
                                     </td>
                                 </tr>
                             )}

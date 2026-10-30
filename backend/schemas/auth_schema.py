@@ -2,10 +2,8 @@ import re
 from datetime import date
 
 def validate_register_data(data):
-    errors = {}
-
     if not isinstance(data, dict):
-        return {"body": "Request body must be a JSON object."}
+        return "Request body must be a valid JSON object."
 
     full_name = data.get("full_name")
     email = data.get("email")
@@ -13,74 +11,66 @@ def validate_register_data(data):
     contact_number = data.get("contact_number")
     date_of_joining = data.get("date_of_joining")
 
-    # Full name validation
     if not isinstance(full_name, str) or not full_name.strip():
-        errors["full_name"] = "Full name is required."
-    elif len(full_name.strip()) > 100:
-        errors["full_name"] = "Full name must not exceed 100 characters."
+        return "Full name is required."
+    if len(full_name.strip()) > 100:
+        return "Full name must not exceed 100 characters."
 
-    # Email validation
     if not isinstance(email, str) or not email.strip():
-        errors["email"] = "Email is required."
-    elif len(email.strip()) > 100:
-        errors["email"] = "Email must not exceed 100 characters."
-    elif not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email.strip()):
-        errors["email"] = "Enter a valid email address."
+        return "Email is required."
+    if len(email.strip()) > 100:
+        return "Email must not exceed 100 characters."
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email.strip()):
+        return "Enter a valid email address."
 
-    # Password validation
     if not isinstance(password, str) or not password:
-        errors["password"] = "Password is required."
-    elif len(password) < 8:
-        errors["password"] = "Password must contain at least 8 characters."
+        return "Password is required."
+    if len(password) < 8:
+        return "Password must contain at least 8 characters."
 
-    # Contact number is optional
     if contact_number is not None and contact_number != "":
         if not isinstance(contact_number, str):
-            errors["contact_number"] = "Contact number must be a string."
-        elif len(contact_number) > 20:
-            errors["contact_number"] = "Contact number must not exceed 20 characters."
+            return "Contact number must be a string."
+        if len(contact_number) > 20:
+            return "Contact number must not exceed 20 characters."
 
-    # Date of joining is optional
     if date_of_joining is not None and date_of_joining != "":
         if not isinstance(date_of_joining, str):
-            errors["date_of_joining"] = "Date must be a string in YYYY-MM-DD format."
-        else:
-            try:
-                date.fromisoformat(date_of_joining)
-            except ValueError:
-                errors["date_of_joining"] = "Invalid date. Use YYYY-MM-DD format."
+            return "Date must be a string in YYYY-MM-DD format."
+        try:
+            date.fromisoformat(date_of_joining)
+        except ValueError:
+            return "Invalid date. Use YYYY-MM-DD format."
 
     role_id = data.get("role_id")
     if role_id is not None and role_id != "":
         if not isinstance(role_id, int) or isinstance(role_id, bool) or role_id <= 0:
-            errors["role_id"] = "Role ID must be a positive integer."
+            return "Role ID must be a positive integer."
 
     position_id = data.get("position_id")
     if position_id is not None and position_id != "":
         if not isinstance(position_id, int) or isinstance(position_id, bool) or position_id <= 0:
-            errors["position_id"] = "Position ID must be a positive integer."
+            return "Position ID must be a positive integer."
 
-    return errors
+    return None
 
 def validate_login_data(data):
-    errors = {}
-
     if not isinstance(data, dict):
-        return {"body": "Request body must be a JSON object."}
+        return "Request body must be a valid JSON object."
 
     email = data.get("email")
     password = data.get("password")
 
     if not isinstance(email, str) or not email.strip():
-        errors["email"] = "Email is required."
-    elif len(email.strip()) > 100:
-        errors["email"] = "Email must not exceed 100 characters."
-    elif not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email.strip()):
-        errors["email"] = "Enter a valid email address."
+        return "Email is required."
+    if len(email.strip()) > 100:
+        return "Email must not exceed 100 characters."
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email.strip()):
+        return "Enter a valid email address."
 
     if not isinstance(password, str) or not password:
-        errors["password"] = "Password is required."
-    elif len(password) < 8:
-        errors["password"] = "Password must contain at least 8 characters."
+        return "Password is required."
+    if len(password) < 8:
+        return "Password must contain at least 8 characters."
 
-    return errors
+    return None

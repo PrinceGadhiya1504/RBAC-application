@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import axios from "axios";
+import { useToast } from "@/hooks/useToast";
 
 interface EditPositionDialogProps {
     position: Position | null;
@@ -25,9 +25,9 @@ export default function EditPositionDialog({
     open,
     onOpenChange,
 }: EditPositionDialogProps) {
+    const toast = useToast();
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
     const { mutate: updatePos, isPending } = useUpdatePosition();
 
@@ -35,17 +35,15 @@ export default function EditPositionDialog({
         if (position) {
             setName(position.name);
             setDescription(position.description || "");
-            setErrorMsg(null);
         }
     }, [position]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!position) return;
-        setErrorMsg(null);
 
         if (!name.trim()) {
-            setErrorMsg("Position name is required.");
+            toast.warning("Position name is required.");
             return;
         }
 
@@ -59,14 +57,11 @@ export default function EditPositionDialog({
             },
             {
                 onSuccess: () => {
+                    toast.success("Position updated successfully.");
                     onOpenChange(false);
                 },
                 onError: (err) => {
-                    if (axios.isAxiosError(err)) {
-                        setErrorMsg(err.response?.data?.message || "Failed to update position.");
-                    } else {
-                        setErrorMsg((err as Error).message || "Failed to update position.");
-                    }
+                    toast.error(err, "Failed to update position.");
                 },
             }
         );
@@ -102,10 +97,6 @@ export default function EditPositionDialog({
                                 onChange={(e) => setDescription(e.target.value)}
                             />
                         </div>
-
-                        {errorMsg && (
-                            <p className="text-xs text-destructive font-medium">{errorMsg}</p>
-                        )}
                     </div>
 
                     <DialogFooter>

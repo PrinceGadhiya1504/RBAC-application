@@ -70,7 +70,7 @@ def page_permission_required(page_name, permission_name):
             if not has_permission:
                 return jsonify({
                     "success": False,
-                    "message": "You do not have permission to access this resource."
+                    "message": f"You do not have {permission_name.upper()} access to the {page_name} module."
                 }), 403
 
             return func(*args, **kwargs)

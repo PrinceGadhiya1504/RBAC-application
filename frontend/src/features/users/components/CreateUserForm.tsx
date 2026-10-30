@@ -5,7 +5,7 @@ import { usePositions } from "@/features/positions/hooks/usePositions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import axios from "axios";
+import { useToast } from "@/hooks/useToast";
 
 interface CreateUserFormProps {
     onCancel?: () => void;
@@ -16,6 +16,7 @@ export default function CreateUserForm({
     onCancel,
     onSuccess,
 }: CreateUserFormProps) {
+    const toast = useToast();
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -26,7 +27,7 @@ export default function CreateUserForm({
     const [roleId, setRoleId] = useState<string>("");
     const [positionId, setPositionId] = useState<string>("");
 
-    const { mutate: createUser, isPending, isError, error } = useCreateUser();
+    const { mutate: createUser, isPending } = useCreateUser();
     const { data: rolesData } = useRoles();
     const { data: positionsData } = usePositions();
 
@@ -48,6 +49,7 @@ export default function CreateUserForm({
             },
             {
                 onSuccess: () => {
+                    toast.success("User created successfully.");
                     setFullName("");
                     setEmail("");
                     setPassword("");
@@ -56,6 +58,9 @@ export default function CreateUserForm({
                     setRoleId("");
                     setPositionId("");
                     onSuccess?.();
+                },
+                onError: (err) => {
+                    toast.error(err, "Failed to create user.");
                 },
             }
         );
@@ -159,14 +164,6 @@ export default function CreateUserForm({
                     </select>
                 </div>
             </div>
-
-            {isError && (
-                <p className="text-sm text-destructive" role="alert">
-                    {axios.isAxiosError(error)
-                        ? error.response?.data?.message || "Failed to create user."
-                        : error.message || "Failed to create user."}
-                </p>
-            )}
 
             <div className="flex justify-end gap-2 pt-2">
                 {onCancel && (

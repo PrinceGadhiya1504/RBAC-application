@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { usePositions } from "../hooks/usePositions";
 import { useDeletePosition } from "../hooks/useDeletePosition";
 import type { Position } from "../types/position.types";
@@ -7,59 +7,28 @@ import EditPositionDialog from "./EditPositionDialog";
 import { useModulePermissions } from "@/features/auth/hooks/useModulePermissions";
 import AccessDeniedCard from "@/features/auth/components/AccessDeniedCard";
 import { Button } from "@/components/ui/button";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
     Briefcase,
-    Search,
-    Edit2,
-    Trash2,
     AlertCircle,
-    Building,
 } from "lucide-react";
-import axios from "axios";
+import { useToast } from "@/hooks/useToast";
 
 export default function PositionsTable() {
+    const toast = useToast();
     const { canView, canCreate, canUpdate: canEdit, canDelete } = useModulePermissions("Positions");
 
     const { data, isPending, isError, error } = usePositions();
-    const { mutate: deletePos } = useDeletePosition();
+    const { mutate: deletePos, isPending: isDeleting } = useDeletePosition();
 
-    const [searchQuery, setSearchQuery] = useState("");
     const [editingPosition, setEditingPosition] = useState<Position | null>(null);
-    const [actionError, setActionError] = useState<string | null>(null);
+    const [deletingPosition, setDeletingPosition] = useState<Position | null>(null);
 
     if (!canView) {
         return <AccessDeniedCard module="Positions" />;
     }
 
-    const positions = useMemo(() => data?.positions || [], [data]);
-
-    const filteredPositions = useMemo(() => {
-        if (!searchQuery.trim()) return positions;
-        const q = searchQuery.toLowerCase();
-        return positions.filter(
-            (p) =>
-                p.name.toLowerCase().includes(q) ||
-                (p.description && p.description.toLowerCase().includes(q))
-        );
-    }, [positions, searchQuery]);
-
-    const handleDelete = (pos: Position) => {
-        const confirmed = window.confirm(
-            `Are you sure you want to delete the position "${pos.name}"?`
-        );
-        if (!confirmed) return;
-
-        setActionError(null);
-        deletePos(pos.position_id, {
-            onError: (err) => {
-                if (axios.isAxiosError(err)) {
-                    setActionError(err.response?.data?.message || "Failed to delete position.");
-                } else {
-                    setActionError((err as Error).message || "Failed to delete position.");
-                }
-            },
-        });
-    };
+    const positions = data?.positions || [];
 
     if (isPending) {
         return (
@@ -78,7 +47,7 @@ export default function PositionsTable() {
                 <div className="flex items-center gap-2">
                     <AlertCircle className="size-4" />
                     <p className="text-sm font-medium">
-                        {(error as Error)?.message || "Failed to load positions."}
+                        {(error as any)?.response?.data?.message || error?.message || "Failed to load positions."}
                     </p>
                 </div>
             </div>
@@ -88,26 +57,23 @@ export default function PositionsTable() {
     return (
         <div className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="relative flex-1 sm:w-64">
-                    <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search positions..."
-                        className="h-9 w-full rounded-lg border border-input bg-background pl-9 pr-3 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    />
+                <div>
+                    <div className="flex items-center gap-2">
+                        <Briefcase className="size-5 text-primary" />
+                        <h2 className="text-xl font-bold tracking-tight text-foreground">
+                            Positions List
+                        </h2>
+                        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                            {positions.length} total
+                        </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Manage organizational positions and job titles.
+                    </p>
                 </div>
 
                 {canCreate && <CreatePositionDialog />}
             </div>
-
-            {actionError && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive">
-                    <AlertCircle className="size-4 shrink-0" />
-                    <span>{actionError}</span>
-                </div>
-            )}
 
             <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
                 <table className="w-full text-left text-sm">
@@ -117,7 +83,7 @@ export default function PositionsTable() {
                             <th className="px-4 py-3 font-semibold min-w-48">Position Title</th>
                             <th className="px-4 py-3 font-semibold">Description</th>
                             {(canEdit || canDelete) && (
-                                <th className="px-4 py-3 text-right font-semibold min-w-28">
+                                <th className="px-4 py-3 font-semibold">
                                     Actions
                                 </th>
                             )}
@@ -125,83 +91,78 @@ export default function PositionsTable() {
                     </thead>
 
                     <tbody className="divide-y divide-border">
-                        {filteredPositions.length > 0 ? (
-                            filteredPositions.map((pos, index) => (
-                                <tr
-                                    key={pos.position_id}
-                                    className="transition-colors hover:bg-muted/30"
-                                >
-                                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                                        #{index + 1}
-                                    </td>
+                        {positions.map((pos, index) => (
+                            <tr
+                                key={pos.position_id}
+                                className="transition-colors hover:bg-muted/30"
+                            >
+                                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                                    {index + 1}
+                                </td>
 
+                                <td className="px-4 py-3">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                            <Briefcase className="size-4" />
+                                        </div>
+                                        <span className="font-semibold text-foreground">
+                                            {pos.name}
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <td className="px-4 py-3 text-xs text-muted-foreground max-w-md truncate">
+                                    {pos.description || (
+                                        <span className="italic text-muted-foreground/50">
+                                            No description provided
+                                        </span>
+                                    )}
+                                </td>
+
+                                {(canEdit || canDelete) && (
                                     <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                                                <Briefcase className="size-4" />
-                                            </div>
-                                            <span className="font-semibold text-foreground">
-                                                {pos.name}
-                                            </span>
+                                        <div className="flex items-center gap-2">
+                                            {canEdit && (
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => setEditingPosition(pos)}
+                                                    className="h-8 cursor-pointer"
+                                                >
+                                                    Edit
+                                                </Button>
+                                            )}
+
+                                            {canDelete && (
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="destructive"
+                                                    disabled={isDeleting}
+                                                    onClick={() => setDeletingPosition(pos)}
+                                                    className="h-8 cursor-pointer"
+                                                >
+                                                    Delete
+                                                </Button>
+                                            )}
                                         </div>
                                     </td>
+                                )}
+                            </tr>
+                        ))}
 
-                                    <td className="px-4 py-3 text-xs text-muted-foreground max-w-md truncate">
-                                        {pos.description || (
-                                            <span className="italic text-muted-foreground/50">
-                                                No description provided
-                                            </span>
-                                        )}
-                                    </td>
-
-                                    {(canEdit || canDelete) && (
-                                        <td className="px-4 py-3 text-right">
-                                            <div className="flex items-center justify-end gap-1">
-                                                {canEdit && (
-                                                    <Button
-                                                        type="button"
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        onClick={() => setEditingPosition(pos)}
-                                                        className="size-8 p-0 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
-                                                        title="Edit position"
-                                                    >
-                                                        <Edit2 className="size-3.5" />
-                                                    </Button>
-                                                )}
-
-                                                {canDelete && (
-                                                    <Button
-                                                        type="button"
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        onClick={() => handleDelete(pos)}
-                                                        className="size-8 p-0 hover:bg-destructive/10 text-muted-foreground hover:text-destructive cursor-pointer"
-                                                        title="Delete position"
-                                                    >
-                                                        <Trash2 className="size-3.5" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </td>
-                                    )}
-                                </tr>
-                            ))
-                        ) : (
+                        {positions.length === 0 && (
                             <tr>
                                 <td
                                     colSpan={canEdit || canDelete ? 4 : 3}
                                     className="py-12 text-center"
                                 >
-                                    <Building className="mx-auto size-10 text-muted-foreground" />
-                                    <h4 className="mt-3 text-sm font-semibold text-foreground">
-                                        No positions found
-                                    </h4>
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                        {searchQuery
-                                            ? "Try adjusting your search query."
-                                            : "Create your first job position to get started."}
-                                    </p>
+                                    <div className="flex flex-col items-center justify-center gap-1.5 text-muted-foreground">
+                                        <Briefcase className="size-8 opacity-40" />
+                                        <p className="text-sm font-medium text-foreground">No positions found</p>
+                                        <p className="text-xs">There are no positions to display.</p>
+                                    </div>
                                 </td>
                             </tr>
                         )}
@@ -213,6 +174,27 @@ export default function PositionsTable() {
                 position={editingPosition}
                 open={Boolean(editingPosition)}
                 onOpenChange={(isOpen) => !isOpen && setEditingPosition(null)}
+            />
+
+            <ConfirmDialog
+                open={Boolean(deletingPosition)}
+                onOpenChange={(open) => !open && setDeletingPosition(null)}
+                title="Delete Position"
+                description="Are you sure you want to delete this position? This action cannot be undone."
+                isLoading={isDeleting}
+                onConfirm={() => {
+                    if (!deletingPosition) return;
+                    deletePos(deletingPosition.position_id, {
+                        onSuccess: () => {
+                            toast.success("Position deleted successfully.");
+                            setDeletingPosition(null);
+                        },
+                        onError: (err) => {
+                            toast.error(err, "Failed to delete position.");
+                            setDeletingPosition(null);
+                        },
+                    });
+                }}
             />
         </div>
     );

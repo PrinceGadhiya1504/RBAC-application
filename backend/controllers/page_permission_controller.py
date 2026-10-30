@@ -1,4 +1,3 @@
-
 from flask import request, jsonify
 from schemas.page_permission_schema import validate_page_permission_data
 from services.page_permission_service import assign_permission_to_page, get_all_page_permissions, get_page_permissions, update_page_permission, delete_page_permission
@@ -6,19 +5,11 @@ from services.page_permission_service import assign_permission_to_page, get_all_
 def assign_permission_to_page_controller():
     data = request.get_json(silent=True)
 
-    if not isinstance(data, dict):
+    error = validate_page_permission_data(data)
+    if error:
         return {
             "success": False,
-            "message": "Request body must be a valid JSON object."
-        }, 400
-
-    errors = validate_page_permission_data(data)
-
-    if errors:
-        return {
-            "success": False,
-            "message": "Validation failed.",
-            "errors": errors
+            "message": error
         }, 400
 
     return assign_permission_to_page(data)
@@ -37,23 +28,14 @@ def get_all_page_permissions_controller():
 def get_page_permissions_controller(page_id):
     return get_page_permissions(page_id)
 
-
 def update_page_permission_controller(page_permission_id):
     data = request.get_json(silent=True)
 
-    if not isinstance(data, dict):
+    error = validate_page_permission_data(data)
+    if error:
         return jsonify({
             "success": False,
-            "message": "Request body must be valid JSON."
-        }), 400
-
-    errors = validate_page_permission_data(data)
-
-    if errors:
-        return jsonify({
-            "success": False,
-            "message": "Validation failed.",
-            "errors": errors
+            "message": error
         }), 400
 
     try:
@@ -65,7 +47,6 @@ def update_page_permission_controller(page_permission_id):
             "success": False,
             "message": "An internal server error occurred."
         }), 500
-
 
 def delete_page_permission_controller(page_permission_id):
     try:

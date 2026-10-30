@@ -3,11 +3,17 @@ import type {
     CreateUserRequest,
     UpdateUserRequest,
     User,
+    UserResponse,
     UsersResponse,
 } from "../types/user.types";
 
 export const fetchUsers = async (): Promise<UsersResponse> => {
     const response = await api.get<UsersResponse>("/users");
+    return response.data;
+};
+
+export const fetchUserById = async (userId: number): Promise<UserResponse> => {
+    const response = await api.get<UserResponse>(`/users/${userId}`);
     return response.data;
 };
 

@@ -44,19 +44,11 @@ def get_role_by_id_controller(role_id):
 def create_role_controller():
     data = request.get_json(silent=True)
 
-    if not isinstance(data, dict):
+    error = validate_role_data(data)
+    if error:
         return jsonify({
             "success": False,
-            "message": "Request body must be valid JSON."
-        }), 400
-
-    errors = validate_role_data(data)
-
-    if errors:
-        return jsonify({
-            "success": False,
-            "message": "Validation failed.",
-            "errors": errors
+            "message": error
         }), 400
 
     try:
@@ -72,19 +64,11 @@ def create_role_controller():
 def update_role_controller(role_id):
     data = request.get_json(silent=True)
 
-    if not isinstance(data, dict):
+    error = validate_update_role_data(data)
+    if error:
         return jsonify({
             "success": False,
-            "message": "Request body must be valid JSON."
-        }), 400
-
-    errors = validate_update_role_data(data)
-
-    if errors:
-        return jsonify({
-            "success": False,
-            "message": "Validation failed.",
-            "errors": errors
+            "message": error
         }), 400
 
     try:

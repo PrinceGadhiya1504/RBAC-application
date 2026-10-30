@@ -4,7 +4,7 @@ import type { Role } from "../types/role.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import axios from "axios";
+import { useToast } from "@/hooks/useToast";
 
 interface EditRoleFormProps {
     role: Role;
@@ -17,10 +17,11 @@ export default function EditRoleForm({
     onCancel,
     onSuccess,
 }: EditRoleFormProps) {
+    const toast = useToast();
     const [name, setName] = useState(role.name);
     const [description, setDescription] = useState(role.description ?? "");
 
-    const { mutate: updateRole, isPending, isError, error } = useUpdateRole();
+    const { mutate: updateRole, isPending } = useUpdateRole();
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -35,7 +36,11 @@ export default function EditRoleForm({
             },
             {
                 onSuccess: () => {
+                    toast.success("Role updated successfully.");
                     onSuccess();
+                },
+                onError: (err) => {
+                    toast.error(err, "Failed to update role.");
                 },
             }
         );
@@ -62,14 +67,6 @@ export default function EditRoleForm({
                     placeholder="Brief description of this role"
                 />
             </div>
-
-            {isError && (
-                <p className="text-sm text-destructive" role="alert">
-                    {axios.isAxiosError(error)
-                        ? error.response?.data?.message || "Failed to update role."
-                        : error.message || "Failed to update role."}
-                </p>
-            )}
 
             <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>

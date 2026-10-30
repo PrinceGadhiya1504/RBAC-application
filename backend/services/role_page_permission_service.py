@@ -131,7 +131,7 @@ def bulk_assign_permissions_to_role(data):
         db.session.commit()
         return {
             "success": True,
-            "message": f"Permissions updated successfully for {role.name}."
+            "message": "Permissions updated successfully."
         }, 200
 
     except Exception:

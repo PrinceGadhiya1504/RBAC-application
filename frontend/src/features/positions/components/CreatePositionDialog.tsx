@@ -11,23 +11,21 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus } from "lucide-react";
-import axios from "axios";
+import { useToast } from "@/hooks/useToast";
 
 export default function CreatePositionDialog() {
+    const toast = useToast();
     const [open, setOpen] = useState(false);
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
     const { mutate: createPos, isPending } = useCreatePosition();
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setErrorMsg(null);
 
         if (!name.trim()) {
-            setErrorMsg("Position name is required.");
+            toast.warning("Position name is required.");
             return;
         }
 
@@ -38,16 +36,13 @@ export default function CreatePositionDialog() {
             },
             {
                 onSuccess: () => {
+                    toast.success("Position created successfully.");
                     setName("");
                     setDescription("");
                     setOpen(false);
                 },
                 onError: (err) => {
-                    if (axios.isAxiosError(err)) {
-                        setErrorMsg(err.response?.data?.message || "Failed to create position.");
-                    } else {
-                        setErrorMsg((err as Error).message || "Failed to create position.");
-                    }
+                    toast.error(err, "Failed to create position.");
                 },
             }
         );
@@ -55,8 +50,7 @@ export default function CreatePositionDialog() {
 
     return (
         <>
-            <Button onClick={() => setOpen(true)} className="gap-2 shadow-sm cursor-pointer">
-                <Plus className="size-4" />
+            <Button onClick={() => setOpen(true)} className="shadow-sm cursor-pointer">
                 Create Position
             </Button>
 
@@ -91,10 +85,6 @@ export default function CreatePositionDialog() {
                                 placeholder="Responsibilities and scope"
                             />
                         </div>
-
-                        {errorMsg && (
-                            <p className="text-xs text-destructive font-medium">{errorMsg}</p>
-                        )}
                     </div>
 
                     <DialogFooter>

@@ -44,13 +44,12 @@ def get_user_by_id_controller(user_id):
 def create_user_controller():
     data = request.get_json(silent=True)
 
-    errors = validate_register_data(data)
+    error = validate_register_data(data)
 
-    if errors:
+    if error:
         return jsonify({
             "success": False,
-            "message": "Validation failed.",
-            "errors": errors
+            "message": error
         }), 400
 
     try:
@@ -74,19 +73,11 @@ def create_user_controller():
 def update_user_controller(user_id):
     data = request.get_json(silent=True)
 
-    if not isinstance(data, dict):
+    error = validate_update_user_data(data)
+    if error:
         return jsonify({
             "success": False,
-            "message": "Request body must be valid JSON."
-        }), 400
-
-    errors = validate_update_user_data(data)
-
-    if errors:
-        return jsonify({
-            "success": False,
-            "message": "Validation failed.",
-            "errors": errors
+            "message": error
         }), 400
 
     try:
