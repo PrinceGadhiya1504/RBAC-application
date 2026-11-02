@@ -1,14 +1,11 @@
 from flask import request, jsonify
 from sqlalchemy.exc import IntegrityError
-from services.user_service import get_all_users, get_user_by_id, update_user, delete_user
-from schemas.user_schema import validate_update_user_data
-from services.auth_service import register_user
-from schemas.auth_schema import validate_register_data
+from services.user_service import get_all_users, get_user_by_id, create_user, update_user, delete_user
+from schemas.user_schema import validate_create_user_data, validate_update_user_data
 
 def get_all_users_controller():
     try:
         users = get_all_users()
-
         return jsonify({
             "success": True,
             "users": users
@@ -23,7 +20,6 @@ def get_all_users_controller():
 def get_user_by_id_controller(user_id):
     try:
         user = get_user_by_id(user_id)
-
         if user is None:
             return jsonify({
                 "success": False,
@@ -44,8 +40,7 @@ def get_user_by_id_controller(user_id):
 def create_user_controller():
     data = request.get_json(silent=True)
 
-    error = validate_register_data(data)
-
+    error = validate_create_user_data(data)
     if error:
         return jsonify({
             "success": False,
@@ -53,10 +48,8 @@ def create_user_controller():
         }), 400
 
     try:
-        result = register_user(data)
-        status_code = result.pop("status_code")
-
-        return jsonify(result), status_code
+        response, status_code = create_user(data)
+        return jsonify(response), status_code
 
     except IntegrityError:
         return jsonify({

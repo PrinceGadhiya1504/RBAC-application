@@ -10,12 +10,12 @@ from utils.decorators import page_permission_required
 
 role_page_permission_blueprint = Blueprint("role_page_permission", __name__, url_prefix="/api/role-page-permissions")
 
-@role_page_permission_blueprint.route("/", methods=["POST"])
+@role_page_permission_blueprint.route("", methods=["POST"])
 @page_permission_required("Permissions", "Update")
 def assign_permission_to_role_route():
     return assign_permission_to_role_controller()
 
-@role_page_permission_blueprint.route("/", methods=["GET"])
+@role_page_permission_blueprint.route("", methods=["GET"])
 @page_permission_required("Permissions", "Read")
 def get_all_role_page_permissions_route():
     return get_all_role_page_permissions_controller()

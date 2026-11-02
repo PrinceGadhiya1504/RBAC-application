@@ -9,7 +9,7 @@ page_permission_blueprint = Blueprint("page_permission",__name__,url_prefix="/ap
 def assign_permission_to_page():
     return assign_permission_to_page_controller()
 
-@page_permission_blueprint.route("/", methods=["GET"])
+@page_permission_blueprint.route("", methods=["GET"])
 @page_permission_required("Permissions", "Read")
 def get_all_page_permissions_route():
     return get_all_page_permissions_controller()

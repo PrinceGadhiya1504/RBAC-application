@@ -1,8 +1,9 @@
 from config.database import db
+from models.base import AuditBase
 
-class Position(db.Model):
+class Position(AuditBase):
     __tablename__ = "positions"
-    
+
     position_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(100), nullable=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
     description = db.Column(db.String(500), nullable=True)

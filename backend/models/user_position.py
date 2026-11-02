@@ -1,6 +1,7 @@
 from config.database import db
+from models.base import AuditBase
 
-class UserPosition(db.Model):
+class UserPosition(AuditBase):
     __tablename__ = "user_positions"
 
     user_position_id = db.Column(db.Integer, primary_key=True, autoincrement=True)

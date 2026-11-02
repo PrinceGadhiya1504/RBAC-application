@@ -123,7 +123,7 @@ export default function RolesTable() {
                                 <td className="px-4 py-3 text-xs text-muted-foreground">
                                     <div className="flex items-center gap-1.5">
                                         <Users className="size-3.5 text-muted-foreground" />
-                                        <span>{roleUserCounts[role.role_id] || 0} users</span>
+                                        <span>{role.member_count ?? roleUserCounts[role.role_id] ?? 0} users</span>
                                     </div>
                                 </td>
                                 {(canUpdate || canDelete) && (

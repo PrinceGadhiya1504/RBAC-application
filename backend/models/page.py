@@ -1,6 +1,7 @@
 from config.database import db
+from models.base import AuditBase
 
-class Page(db.Model):
+class Page(AuditBase):
     __tablename__ = "pages"
 
     page_id = db.Column(db.Integer, primary_key=True, autoincrement=True)

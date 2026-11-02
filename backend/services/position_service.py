@@ -6,19 +6,10 @@ def create_position(data):
     name = data.get("name")
     description = data.get("description")
 
-    if name is not None and name.strip():
-        existing_position = Position.query.filter(db.func.lower(Position.name) == name.strip().lower()).first()
-
-        if existing_position:
-            return {
-                "success": False,
-                "message": "Position name already exists."
-            }, 409
-
     try:
         position = Position(
-            name = name.strip(),
-            description = description
+            name=name.strip(),
+            description=description.strip() if description else None
         )
 
         db.session.add(position)
@@ -38,8 +29,8 @@ def create_position(data):
         db.session.rollback()
         return {
             "success": False,
-            "message": "Unable to create position due to a database constraint."
-        }, 400
+            "message": "Position name already exists."
+        }, 409
 
     except Exception:
         db.session.rollback()
@@ -93,21 +84,9 @@ def update_position(position_id, data):
     name = data.get("name", position.name)
     description = data.get("description", position.description)
 
-    if name is not None and name.strip():
-        existing_position = Position.query.filter(
-            db.func.lower(Position.name) == name.strip().lower(),
-            Position.position_id != position_id
-        ).first()
-
-        if existing_position:
-            return {
-                "success": False,
-                "message": "Position name already exists."
-            }, 409
-
     try:
         position.name = name.strip()
-        position.description = description
+        position.description = description.strip() if description else None
 
         db.session.commit()
 
@@ -125,8 +104,8 @@ def update_position(position_id, data):
         db.session.rollback()
         return {
             "success": False,
-            "message": "Unable to update position due to a database constraint."
-        }, 400
+            "message": "Position name already exists."
+        }, 409
 
     except Exception:
         db.session.rollback()

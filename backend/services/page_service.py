@@ -38,16 +38,8 @@ def get_page_by_id(page_id):
 def create_page(data):
     name = data["name"].strip()
 
-    existing_page = Page.query.filter(db.func.lower(Page.name) == name.lower()).first()
-
-    if existing_page:
-        return {
-            "success": False,
-            "message": "Page already exists."
-        }, 409
-
     try:
-        page = Page(name = name)
+        page = Page(name=name)
         db.session.add(page)
         db.session.commit()
 
@@ -59,10 +51,9 @@ def create_page(data):
                 "name": page.name
             }
         }, 201
-    
+
     except IntegrityError:
         db.session.rollback()
-
         return {
             "success": False,
             "message": "Page already exists."
@@ -84,17 +75,6 @@ def update_page(page_id, data):
 
     name = data["name"].strip()
 
-    existing_page = Page.query.filter(
-        db.func.lower(Page.name) == name.lower(),
-        Page.page_id != page_id
-    ).first()
-
-    if existing_page:
-        return {
-            "success": False,
-            "message": "Page name already exists."
-        }, 409
-
     try:
         page.name = name
         db.session.commit()
@@ -110,7 +90,6 @@ def update_page(page_id, data):
 
     except IntegrityError:
         db.session.rollback()
-
         return {
             "success": False,
             "message": "Page name already exists."
@@ -138,6 +117,13 @@ def delete_page(page_id):
             "success": True,
             "message": "Page deleted successfully."
         }, 200
+
+    except IntegrityError:
+        db.session.rollback()
+        return {
+            "success": False,
+            "message": "Cannot delete page because related records exist."
+        }, 409
 
     except Exception:
         db.session.rollback()

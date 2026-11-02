@@ -21,18 +21,18 @@ def validate_user_position_data(data):
         return "Start date is required in YYYY-MM-DD format."
     else:
         try:
-            parsed_start_date = date.fromisoformat(start_date)
+            parsed_start_date = date.fromisoformat(start_date.strip())
         except ValueError:
             return "Start date must be a valid YYYY-MM-DD date."
 
     parsed_end_date = None
 
-    if end_date is not None and end_date != "":
+    if end_date is not None and str(end_date).strip() != "":
         if not isinstance(end_date, str) or not end_date.strip():
             return "End date must be a valid YYYY-MM-DD date or null."
         else:
             try:
-                parsed_end_date = date.fromisoformat(end_date)
+                parsed_end_date = date.fromisoformat(end_date.strip())
             except ValueError:
                 return "End date must be a valid YYYY-MM-DD date."
 

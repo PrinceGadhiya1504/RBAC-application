@@ -1,6 +1,7 @@
 from config.database import db
+from models.base import AuditBase
 
-class Role(db.Model):
+class Role(AuditBase):
     __tablename__ = "roles"
 
     role_id = db.Column(db.Integer, primary_key=True, autoincrement=True)

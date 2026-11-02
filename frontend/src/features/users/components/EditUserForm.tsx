@@ -6,6 +6,7 @@ import type { User } from "../types/user.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import DatePicker from "@/components/ui/DatePicker";
 import { useToast } from "@/hooks/useToast";
 
 interface EditUserFormProps {
@@ -26,6 +27,9 @@ export default function EditUserForm({
     const [dateOfJoining, setDateOfJoining] = useState(
         user.date_of_joining ? user.date_of_joining.split("T")[0] : ""
     );
+    const [endDate, setEndDate] = useState(
+        user.end_date ? user.end_date.split("T")[0] : ""
+    );
     const [roleId, setRoleId] = useState<string>(
         user.role_id ? String(user.role_id) : ""
     );
@@ -40,8 +44,15 @@ export default function EditUserForm({
     const roles = rolesData?.roles || [];
     const positions = positionsData?.positions || [];
 
+    const isDateInvalid = Boolean(endDate && dateOfJoining && endDate <= dateOfJoining);
+
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+
+        if (isDateInvalid) {
+            toast.error("End date must be greater than start date.");
+            return;
+        }
 
         updateUser(
             {
@@ -51,6 +62,7 @@ export default function EditUserForm({
                     email,
                     contact_number: contactNumber.trim() || undefined,
                     date_of_joining: dateOfJoining || undefined,
+                    end_date: endDate || null,
                     role_id: roleId ? Number(roleId) : null,
                     position_id: positionId ? Number(positionId) : null,
                 },
@@ -90,27 +102,44 @@ export default function EditUserForm({
                 />
             </div>
 
+            <div className="space-y-2">
+                <Label htmlFor="editContactNumber">Contact Number</Label>
+                <Input
+                    id="editContactNumber"
+                    type="tel"
+                    value={contactNumber}
+                    onChange={(event) => setContactNumber(event.target.value)}
+                    placeholder="e.g. +1 555-0199"
+                    maxLength={20}
+                />
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="editContactNumber">Contact Number</Label>
-                    <Input
-                        id="editContactNumber"
-                        type="tel"
-                        value={contactNumber}
-                        onChange={(event) => setContactNumber(event.target.value)}
-                        placeholder="e.g. +1 555-0199"
-                        maxLength={20}
+                    <Label htmlFor="editDateOfJoining">Date of Joining</Label>
+                    <DatePicker
+                        id="editDateOfJoining"
+                        value={dateOfJoining}
+                        onChange={(val) => setDateOfJoining(val)}
                     />
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="editDateOfJoining">Date of Joining</Label>
-                    <Input
-                        id="editDateOfJoining"
-                        type="date"
-                        value={dateOfJoining}
-                        onChange={(event) => setDateOfJoining(event.target.value)}
+                    <Label htmlFor="editEndDate">
+                        End Date <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+                    </Label>
+                    <DatePicker
+                        id="editEndDate"
+                        value={endDate}
+                        min={dateOfJoining || undefined}
+                        onChange={(val) => setEndDate(val)}
+                        className={isDateInvalid ? "border-destructive focus-visible:ring-destructive" : ""}
                     />
+                    {isDateInvalid && (
+                        <p className="text-xs text-destructive">
+                            End date must be greater than start date.
+                        </p>
+                    )}
                 </div>
             </div>
 

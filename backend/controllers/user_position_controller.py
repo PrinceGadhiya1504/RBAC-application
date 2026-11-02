@@ -1,24 +1,36 @@
 from flask import request, jsonify
 from schemas.user_position_schema import validate_user_position_data
-from services.user_position_service import assign_position_to_user, get_user_positions, get_all_user_positions, update_user_position, delete_user_position
+from services.user_position_service import (
+    assign_position_to_user,
+    get_all_user_positions,
+    get_user_positions,
+    update_user_position,
+    delete_user_position,
+)
 
 def assign_position_to_user_controller():
     data = request.get_json(silent=True)
 
     error = validate_user_position_data(data)
     if error:
-        return {
+        return jsonify({
             "success": False,
             "message": error
-        }, 400
+        }), 400
 
-    return assign_position_to_user(data)
+    try:
+        response, status_code = assign_position_to_user(data)
+        return jsonify(response), status_code
+    except Exception:
+        return jsonify({
+            "success": False,
+            "message": "An internal server error occurred."
+        }), 500
 
 def get_all_user_positions_controller():
     try:
         response, status_code = get_all_user_positions()
         return jsonify(response), status_code
-
     except Exception:
         return jsonify({
             "success": False,
@@ -26,19 +38,40 @@ def get_all_user_positions_controller():
         }), 500
 
 def get_user_positions_controller(user_id):
-    return get_user_positions(user_id)
+    try:
+        response, status_code = get_user_positions(user_id)
+        return jsonify(response), status_code
+    except Exception:
+        return jsonify({
+            "success": False,
+            "message": "An internal server error occurred."
+        }), 500
 
 def update_user_position_controller(user_position_id):
     data = request.get_json(silent=True)
 
     error = validate_user_position_data(data)
     if error:
-        return {
+        return jsonify({
             "success": False,
             "message": error
-        }, 400
+        }), 400
 
-    return update_user_position(user_position_id, data)
+    try:
+        response, status_code = update_user_position(user_position_id, data)
+        return jsonify(response), status_code
+    except Exception:
+        return jsonify({
+            "success": False,
+            "message": "An internal server error occurred."
+        }), 500
 
 def delete_user_position_controller(user_position_id):
-    return delete_user_position(user_position_id)
+    try:
+        response, status_code = delete_user_position(user_position_id)
+        return jsonify(response), status_code
+    except Exception:
+        return jsonify({
+            "success": False,
+            "message": "An internal server error occurred."
+        }), 500

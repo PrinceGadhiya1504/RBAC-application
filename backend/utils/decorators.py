@@ -16,18 +16,18 @@ def role_required(*allowed_roles):
         def wrapper(*args, **kwargs):
             user_id = get_jwt_identity()
 
-            assignment = db.session.query(
+            roles = db.session.query(
                 Role.name
             ).join(
                 UserRole,
                 UserRole.role_id == Role.role_id
             ).filter(
                 UserRole.user_id == int(user_id)
-            ).first()
+            ).all()
 
-            user_role = assignment[0] if assignment else None
+            user_roles = [r[0] for r in roles]
 
-            if not user_role or user_role not in allowed_roles:
+            if not any(role in allowed_roles for role in user_roles):
                 return jsonify({
                     "success": False,
                     "message": "You do not have permission to access this resource."

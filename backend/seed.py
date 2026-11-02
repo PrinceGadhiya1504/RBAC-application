@@ -40,6 +40,7 @@ DEFAULT_ADMIN = {
 
 def seed_database():
     with app.app_context():
+        db.create_all()
         print("--- Starting RBAC Seeder ---")
 
         # 1. Seed Predefined Pages

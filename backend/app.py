@@ -62,5 +62,15 @@ def test_db():
             "message": "Database query failed"
         }), 500
 
+with app.app_context():
+    try:
+        db.create_all()
+        from models.page import Page
+        if Page.query.count() == 0:
+            from seed import seed_database
+            seed_database()
+    except Exception:
+        pass
+
 if __name__ == "__main__":
     app.run(debug=app.config["DEBUG"])

@@ -6,25 +6,26 @@ from models.role import Role
 from models.user_role import UserRole
 
 def get_all_user_roles():
-    assignments = db.session.execute(select(UserRole).order_by(UserRole.user_role_id)).scalars().all()
-
-    user_roles = []
-
-    for assignment in assignments:
-        user = db.session.get(User, assignment.user_id)
-        role = db.session.get(Role, assignment.role_id)
-
-        user_roles.append({
-            "user_role_id": assignment.user_role_id,
-            "user_id": assignment.user_id,
-            "user_name": user.full_name if user else None,
-            "role_id": assignment.role_id,
-            "role_name": role.name if role else None
-        })
+    assignments = (
+        db.session.query(UserRole, User, Role)
+        .join(User, UserRole.user_id == User.user_id)
+        .join(Role, UserRole.role_id == Role.role_id)
+        .order_by(UserRole.user_role_id)
+        .all()
+    )
 
     return {
         "success": True,
-        "user_roles": user_roles
+        "user_roles": [
+            {
+                "user_role_id": ur.user_role_id,
+                "user_id": user.user_id,
+                "user_name": user.full_name,
+                "role_id": role.role_id,
+                "role_name": role.name,
+            }
+            for ur, user, role in assignments
+        ]
     }, 200
 
 def get_user_roles(user_id):

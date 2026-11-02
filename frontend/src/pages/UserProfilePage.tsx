@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useUser } from "@/features/users/hooks/useUser";
 import { useModulePermissions } from "@/features/auth/hooks/useModulePermissions";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import AccessDeniedCard from "@/features/auth/components/AccessDeniedCard";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import EditUserForm from "@/features/users/components/EditUserForm";
 import type { User } from "@/features/users/types/user.types";
+import { formatDate } from "@/lib/dateUtils";
 import {
     ArrowLeft,
     Mail,
@@ -21,20 +23,41 @@ import {
     Briefcase,
     User as UserIcon,
     Pencil,
-    Hash,
     Clock,
     AlertCircle,
+    History,
+    CheckCircle2,
 } from "lucide-react";
 
 export default function UserProfilePage() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { canView, canUpdate } = useModulePermissions("Users");
+    const [searchParams] = useSearchParams();
+    const { user: currentUser } = useAuth();
+    const { canView: canViewUsers, canUpdate: canUpdateUsers } = useModulePermissions("Users");
 
-    const fallbackUser: User | undefined = location.state?.user;
+    const queryUserId = searchParams.get("id");
     const stateUserId = location.state?.userId || location.state?.user?.user_id;
     const storedUserId = typeof window !== "undefined" ? sessionStorage.getItem("viewing_user_id") : null;
-    const numericUserId = stateUserId ? Number(stateUserId) : (storedUserId ? Number(storedUserId) : undefined);
+    const numericUserId = queryUserId ? Number(queryUserId) : (stateUserId ? Number(stateUserId) : (storedUserId ? Number(storedUserId) : currentUser?.user_id));
+
+    const isOwnProfile = Boolean(currentUser && numericUserId === currentUser.user_id);
+    const canView = canViewUsers || isOwnProfile;
+    const canUpdate = canUpdateUsers || isOwnProfile;
+
+    const fallbackUser: User | undefined = location.state?.user || (isOwnProfile && currentUser ? {
+        user_id: currentUser.user_id,
+        full_name: currentUser.full_name,
+        email: currentUser.email,
+        contact_number: currentUser.contact_number,
+        date_of_joining: currentUser.date_of_joining,
+        end_date: currentUser.end_date,
+        role_id: null,
+        role_name: currentUser.role || currentUser.roles?.[0] || null,
+        position_id: currentUser.position_id,
+        position_name: currentUser.position_name,
+        position_history: currentUser.position_history,
+    } : undefined);
 
     const { data, isPending, isError, error } = useUser(numericUserId);
     const [isEditOpen, setIsEditOpen] = useState(false);
@@ -114,13 +137,8 @@ export default function UserProfilePage() {
             .slice(0, 2)
         : "U";
 
-    const formattedJoinDate = user.date_of_joining
-        ? new Date(user.date_of_joining).toLocaleDateString(undefined, {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-        })
-        : "Not recorded";
+    const formattedJoinDate = formatDate(user.date_of_joining, "Not recorded");
+    const formattedEndDate = formatDate(user.end_date, "Active / Ongoing");
 
     return (
         <div className="space-y-6 max-w-5xl">
@@ -162,10 +180,6 @@ export default function UserProfilePage() {
                             <h2 className="text-2xl font-bold tracking-tight text-foreground truncate">
                                 {user.full_name}
                             </h2>
-                            <span className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-md border">
-                                <Hash className="size-3" />
-                                {user.user_id}
-                            </span>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2 pt-0.5">
@@ -288,6 +302,16 @@ export default function UserProfilePage() {
 
                         <div className="space-y-1">
                             <dt className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                                <Calendar className="size-3 text-muted-foreground" />
+                                End Date
+                            </dt>
+                            <dd className="font-medium text-foreground">
+                                {formattedEndDate}
+                            </dd>
+                        </div>
+
+                        <div className="space-y-1">
+                            <dt className="text-xs text-muted-foreground font-medium flex items-center gap-1">
                                 <Clock className="size-3 text-muted-foreground" />
                                 System Record ID
                             </dt>
@@ -297,6 +321,66 @@ export default function UserProfilePage() {
                         </div>
                     </dl>
                 </div>
+            </div>
+
+            <div className="rounded-2xl border bg-card p-5 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b pb-3">
+                    <div className="flex items-center gap-2">
+                        <History className="size-4 text-primary" />
+                        <h3 className="text-sm font-semibold tracking-tight text-foreground">
+                            Position History
+                        </h3>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                        {user.position_history?.length || 0} {(user.position_history?.length || 0) === 1 ? "record" : "records"}
+                    </span>
+                </div>
+
+                {user.position_history && user.position_history.length > 0 ? (
+                    <div className="relative pl-6 space-y-5 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-border">
+                        {user.position_history.map((item, idx) => (
+                            <div key={item.user_position_id || idx} className="relative group">
+                                <div
+                                    className={`absolute -left-[1.85rem] top-1.5 size-3.5 rounded-full border-2 bg-background ${item.is_current
+                                            ? "border-emerald-500 bg-emerald-500 ring-2 ring-emerald-500/20"
+                                            : "border-muted-foreground/40"
+                                        }`}
+                                />
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 rounded-xl border bg-card/50 p-3 hover:bg-accent/40 transition-colors">
+                                    <div className="space-y-1">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className="font-semibold text-foreground text-sm">
+                                                {item.position_name || "Unassigned Position"}
+                                            </span>
+                                            {item.is_current ? (
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                    <CheckCircle2 className="size-3" />
+                                                    Current Position
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                                                    Past Position
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Position ID: {item.position_id} &bull; Assignment ID: #{item.user_position_id}
+                                        </p>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground sm:text-right">
+                                        <span className="font-medium text-foreground">
+                                            {formatDate(item.start_date, "Not recorded")} &ndash; {item.end_date ? formatDate(item.end_date) : "Present"}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-6 text-center text-xs text-muted-foreground">
+                        No position history recorded for this user.
+                    </div>
+                )}
             </div>
 
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>

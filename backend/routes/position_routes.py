@@ -5,14 +5,12 @@ from utils.decorators import page_permission_required
 position_blueprint = Blueprint("position", __name__, url_prefix="/api/positions")
 
 @position_blueprint.route("", methods=["POST"])
-@position_blueprint.route("/", methods=["POST"])
 @page_permission_required("Positions", "Create")
 def create_position():
     return create_position_controller()
 
 
 @position_blueprint.route("", methods=["GET"])
-@position_blueprint.route("/", methods=["GET"])
 @page_permission_required("Positions", "Read")
 def get_all_positions():
     return get_all_positions_controller()

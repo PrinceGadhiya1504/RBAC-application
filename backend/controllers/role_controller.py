@@ -4,16 +4,10 @@ from services.role_service import get_all_roles, create_role, get_role_by_id, up
 
 def get_all_roles_controller():
     try:
-        roles = get_all_roles()
-        return jsonify({
-            "success": True,
-            "message": "Roles fetched successfully.",
-            "roles": roles
-        }), 200
+        response, status_code = get_all_roles()
+        return jsonify(response), status_code
 
     except Exception:
-        import traceback
-        traceback.print_exc()
         return jsonify({
             "success": False,
             "message": "An internal server error occurred."
@@ -21,18 +15,8 @@ def get_all_roles_controller():
 
 def get_role_by_id_controller(role_id):
     try:
-        role = get_role_by_id(role_id)
-
-        if role is None:
-            return jsonify({
-                "success": False,
-                "message": "Role not found."
-            }), 404
-
-        return jsonify({
-            "success": True,
-            "role": role
-        }), 200
+        response, status_code = get_role_by_id(role_id)
+        return jsonify(response), status_code
 
     except Exception:
         return jsonify({

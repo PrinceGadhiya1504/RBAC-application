@@ -1,7 +1,8 @@
 from config.database import db
+from models.base import AuditBase
 
-class Permission(db.Model):
-    __tablename__ = 'permissions'
+class Permission(AuditBase):
+    __tablename__ = "permissions"
 
     permission_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(100), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False, unique=True)

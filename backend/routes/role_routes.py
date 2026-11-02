@@ -4,7 +4,7 @@ from controllers.role_controller import create_role_controller, get_all_roles_co
 
 role_blueprint = Blueprint("roles", __name__, url_prefix="/api/roles")
 
-@role_blueprint.route("/", methods=["GET"])
+@role_blueprint.route("", methods=["GET"])
 @page_permission_required("Roles", "Read")
 def get_roles_route():
     return get_all_roles_controller()
@@ -14,7 +14,7 @@ def get_roles_route():
 def get_role_by_id_route(role_id):
     return get_role_by_id_controller(role_id)
 
-@role_blueprint.route("/", methods=["POST"])
+@role_blueprint.route("", methods=["POST"])
 @page_permission_required("Roles", "Create")
 def create_role_route():
     return create_role_controller()

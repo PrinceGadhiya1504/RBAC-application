@@ -1,7 +1,8 @@
 from datetime import date
 from config.database import db
+from models.base import AuditBase
 
-class User(db.Model):
+class User(AuditBase):
     __tablename__ = "users"
 
     user_id = db.Column(db.Integer, primary_key=True, autoincrement=True)

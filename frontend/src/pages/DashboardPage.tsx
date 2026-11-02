@@ -17,6 +17,7 @@ import { useUsers } from "@/features/users/hooks/useUsers";
 import { useRoles } from "@/features/roles/hooks/useRoles";
 import { usePositions } from "@/features/positions/hooks/usePositions";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/dateUtils";
 
 export default function DashboardPage() {
     const { user, canAccessPage } = useAuth();
@@ -173,9 +174,7 @@ export default function DashboardPage() {
                             <div className="min-w-0 flex-1">
                                 <span className="text-xs text-muted-foreground">Date Joined</span>
                                 <p className="font-medium text-foreground">
-                                    {user?.date_of_joining
-                                        ? new Date(user.date_of_joining).toLocaleDateString()
-                                        : "-"}
+                                    {formatDate(user?.date_of_joining)}
                                 </p>
                             </div>
                         </div>
@@ -236,9 +235,7 @@ export default function DashboardPage() {
                                                 {u.contact_number || "—"}
                                             </td>
                                             <td className="px-3 py-2.5 text-muted-foreground">
-                                                {u.date_of_joining
-                                                    ? new Date(u.date_of_joining).toLocaleDateString()
-                                                    : "-"}
+                                                {formatDate(u.date_of_joining)}
                                             </td>
                                         </tr>
                                     ))}

@@ -2,6 +2,7 @@ export interface Role {
     role_id: number;
     name: string;
     description?: string | null;
+    member_count?: number;
 }
 
 export interface RolesResponse {

@@ -130,11 +130,14 @@ export default function Sidebar({
             </div>
 
             <div className="border-t p-3">
-                <div
+                <NavLink
+                    to="/users/profile"
+                    onClick={onCloseMobile}
                     className={cn(
-                        "flex items-center gap-3 rounded-xl bg-muted/50 p-2.5",
+                        "flex items-center gap-3 rounded-xl bg-muted/50 p-2.5 transition-all hover:bg-muted cursor-pointer",
                         isCollapsed && "justify-center p-2"
                     )}
+                    title={isCollapsed ? (user?.full_name ?? "My Profile") : undefined}
                 >
                     <div
                         className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 font-semibold text-xs text-primary"
@@ -158,7 +161,7 @@ export default function Sidebar({
                             )}
                         </div>
                     )}
-                </div>
+                </NavLink>
             </div>
         </aside>
     );

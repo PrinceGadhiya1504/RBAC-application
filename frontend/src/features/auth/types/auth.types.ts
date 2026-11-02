@@ -1,3 +1,5 @@
+import type { UserPositionHistoryItem } from "@/features/users/types/user.types";
+
 export interface LoginRequest {
     email: string;
     password: string;
@@ -13,8 +15,13 @@ export interface AuthUser {
     email: string;
     contact_number?: string | null;
     date_of_joining?: string | null;
+    end_date?: string | null;
     role?: string | null;
     roles?: string[];
+    role_name?: string | null;
+    position_id?: number | null;
+    position_name?: string | null;
+    position_history?: UserPositionHistoryItem[];
     permissions?: UserPermissions;
 }
 

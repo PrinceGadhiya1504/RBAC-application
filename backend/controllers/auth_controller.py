@@ -1,39 +1,12 @@
 from flask import request, jsonify
-from schemas.auth_schema import validate_register_data, validate_login_data
-from services.auth_service import register_user, login_user, get_user_roles_and_permissions
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from config.database import db
-from models.user import User
-
-def register():
-    data = request.get_json(silent=True)
-
-    error = validate_register_data(data)
-
-    if error:
-        return jsonify({
-            "success": False,
-            "message": error,
-        }), 400
-
-    try:
-        result = register_user(data)
-
-        status_code = result.pop("status_code")
-
-        return jsonify(result), status_code
-
-    except Exception:
-        return jsonify({
-            "success": False,
-            "message": "An unexpected error occurred.",
-        }), 500
+from schemas.auth_schema import validate_login_data
+from services.auth_service import login_user, get_user_profile
 
 def login():
     data = request.get_json(silent=True)
 
     error = validate_login_data(data)
-
     if error:
         return jsonify({
             "success": False,
@@ -42,7 +15,7 @@ def login():
 
     try:
         result = login_user(data)
-        status_code = result.pop("status_code")
+        status_code = result.pop("status_code", 200)
 
         return jsonify(result), status_code
 
@@ -54,29 +27,13 @@ def login():
 
 @jwt_required()
 def get_profile():
-    user_id = int(get_jwt_identity())
+    try:
+        user_id = int(get_jwt_identity())
+        response, status_code = get_user_profile(user_id)
+        return jsonify(response), status_code
 
-    user = db.session.get(User, user_id)
-
-    if user is None:
+    except Exception:
         return jsonify({
             "success": False,
-            "message": "User not found."
-        }), 404
-
-    role_name, user_roles, permissions_map = get_user_roles_and_permissions(user.user_id)
-
-    return jsonify({
-        "success": True,
-        "message": "Profile fetched successfully.",
-        "user": {
-            "user_id": user.user_id,
-            "full_name": user.full_name,
-            "email": user.email,
-            "contact_number": user.contact_number,
-            "date_of_joining": user.date_of_joining.isoformat() if user.date_of_joining else None,
-            "role": role_name,
-            "roles": user_roles,
-            "permissions": permissions_map,
-        }
-    }), 200
+            "message": "An unexpected error occurred.",
+        }), 500

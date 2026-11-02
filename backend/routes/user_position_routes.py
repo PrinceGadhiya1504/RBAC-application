@@ -1,15 +1,21 @@
 from flask import Blueprint
-from controllers.user_position_controller import assign_position_to_user_controller,get_all_user_positions_controller, get_user_positions_controller, update_user_position_controller, delete_user_position_controller
+from controllers.user_position_controller import (
+    assign_position_to_user_controller,
+    get_all_user_positions_controller,
+    get_user_positions_controller,
+    update_user_position_controller,
+    delete_user_position_controller,
+)
 from utils.decorators import page_permission_required
 
-user_position_blueprint = Blueprint("user_position_blueprint", __name__, url_prefix="/api/user-positions")
+user_position_blueprint = Blueprint("user_positions", __name__, url_prefix="/api/user-positions")
 
-@user_position_blueprint.route("/", methods=["POST"])
+@user_position_blueprint.route("", methods=["POST"])
 @page_permission_required("Positions", "Create")
 def assign_position_to_user():
     return assign_position_to_user_controller()
 
-@user_position_blueprint.route("/", methods=["GET"])
+@user_position_blueprint.route("", methods=["GET"])
 @page_permission_required("Positions", "Read")
 def get_all_user_positions_route():
     return get_all_user_positions_controller()
