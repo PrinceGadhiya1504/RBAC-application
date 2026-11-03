@@ -12,6 +12,7 @@ class User(AuditBase):
     contact_number = db.Column(db.String(20), nullable=True)
     date_of_joining = db.Column(db.Date, nullable=False, default=date.today)
     password_hash = db.Column(db.String(255), nullable=False)
+    profile_picture = db.Column(db.String(255), nullable=True)
 
     @validates("email")
     def validate_email(self, key, address):

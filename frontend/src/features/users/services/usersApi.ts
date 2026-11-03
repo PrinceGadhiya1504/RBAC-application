@@ -33,3 +33,22 @@ export const updateUser = async (
 export const deleteUser = async (userId: number): Promise<void> => {
     await api.delete(`/users/${userId}`);
 };
+
+export const uploadUserProfilePicture = async (
+    userId: number,
+    file: File
+): Promise<UserResponse> => {
+    const formData = new FormData();
+    formData.append("profile_picture", file);
+
+    const response = await api.post<UserResponse>(
+        `/users/${userId}/profile-picture`,
+        formData,
+        {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        }
+    );
+    return response.data;
+};

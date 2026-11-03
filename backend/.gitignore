@@ -56,3 +56,8 @@ instance/
 # Temporary files
 *.tmp
 *.bak
+
+# Uploaded Files
+uploads/*
+!uploads/.gitkeep
+

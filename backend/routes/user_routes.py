@@ -6,6 +6,7 @@ from controllers.user_controller import (
     create_user_controller,
     update_user_controller,
     delete_user_controller,
+    upload_profile_picture_controller,
 )
 from utils.decorators import page_permission_required, check_user_page_permission
 
@@ -58,6 +59,21 @@ def update_user_route(user_id):
             }), 403
 
     return update_user_controller(user_id)
+
+@user_blueprint.route("/<int:user_id>/profile-picture", methods=["POST"])
+@jwt_required()
+def upload_profile_picture_route(user_id):
+    current_user_id = int(get_jwt_identity())
+    has_update_perm = check_user_page_permission(current_user_id, "Users", "Update")
+
+    # If updating another user, must have Users.Update permission
+    if current_user_id != user_id and not has_update_perm:
+        return jsonify({
+            "success": False,
+            "message": "You do not have UPDATE access to the Users module."
+        }), 403
+
+    return upload_profile_picture_controller(user_id)
 
 @user_blueprint.route("/<int:user_id>", methods=["DELETE"])
 @page_permission_required("Users", "Delete")

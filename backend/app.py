@@ -1,4 +1,5 @@
-from flask import Flask, jsonify
+import os
+from flask import Flask, jsonify, send_from_directory
 from config.settings import Config
 from config.database import db
 from models.user import User
@@ -36,6 +37,13 @@ app.register_blueprint(role_page_permission_blueprint)
 app.register_blueprint(position_blueprint)
 app.register_blueprint(user_position_blueprint)
 
+# Ensure uploads folder exists
+os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+
+@app.route("/api/uploads/<path:filename>", methods=["GET"])
+def serve_uploaded_file(filename):
+    return send_from_directory(Config.UPLOAD_FOLDER, filename)
+
 @app.route("/api", methods=["GET"])
 def health_check():
     return jsonify({
@@ -65,6 +73,10 @@ def test_db():
 with app.app_context():
     try:
         db.create_all()
+
+        from migrations import run_all_migrations
+        run_all_migrations()
+
         from models.page import Page
         if Page.query.count() == 0:
             from seed import seed_database

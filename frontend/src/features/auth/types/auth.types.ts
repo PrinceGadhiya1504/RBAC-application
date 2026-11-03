@@ -14,6 +14,7 @@ export interface AuthUser {
     full_name: string;
     email: string;
     contact_number?: string | null;
+    profile_picture?: string | null;
     date_of_joining?: string | null;
     end_date?: string | null;
     role?: string | null;

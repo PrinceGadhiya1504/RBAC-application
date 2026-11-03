@@ -7,6 +7,7 @@ from models.role import Role
 from models.user_role import UserRole
 from models.position import Position
 from models.user_position import UserPosition
+from utils.file_upload import save_uploaded_image, delete_image
 
 bcrypt = Bcrypt()
 
@@ -46,6 +47,7 @@ def get_all_users():
             "full_name": user.full_name,
             "email": user.email,
             "contact_number": user.contact_number,
+            "profile_picture": user.profile_picture,
             "date_of_joining": (
                 user.date_of_joining.isoformat()
                 if user.date_of_joining
@@ -114,6 +116,7 @@ def get_user_by_id(user_id):
         "full_name": user.full_name,
         "email": user.email,
         "contact_number": user.contact_number,
+        "profile_picture": user.profile_picture,
         "date_of_joining": (
             user.date_of_joining.isoformat()
             if user.date_of_joining
@@ -200,6 +203,7 @@ def create_user(data):
                 "full_name": user.full_name,
                 "email": user.email,
                 "contact_number": user.contact_number,
+                "profile_picture": user.profile_picture,
                 "date_of_joining": user.date_of_joining.isoformat(),
                 "end_date": end_date_val.isoformat() if end_date_val else None,
                 "role_id": role_id if role_name else None,
@@ -349,9 +353,14 @@ def delete_user(user_id):
             "message": "User not found."
         }, 404
 
+    image_to_delete = user.profile_picture
+
     try:
         db.session.delete(user)
         db.session.commit()
+
+        if image_to_delete:
+            delete_image(image_to_delete)
 
         return {
             "success": True,
@@ -361,3 +370,28 @@ def delete_user(user_id):
     except Exception:
         db.session.rollback()
         raise
+
+def upload_user_profile_picture(user_id, uploaded_file):
+    user = db.session.get(User, user_id)
+
+    if user is None:
+        return {
+            "success": False,
+            "message": "User not found."
+        }, 404
+
+    image_name = save_uploaded_image(uploaded_file)
+    old_image_name = user.profile_picture
+
+    user.profile_picture = image_name
+    db.session.commit()
+
+    if old_image_name:
+        delete_image(old_image_name)
+
+    return {
+        "success": True,
+        "message": "Profile picture updated successfully.",
+        "profile_picture": image_name,
+        "user": get_user_by_id(user_id),
+    }, 200

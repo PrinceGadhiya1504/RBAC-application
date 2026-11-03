@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useUser } from "@/features/users/hooks/useUser";
+import { useUploadProfilePicture } from "@/features/users/hooks/useUploadProfilePicture";
 import { useModulePermissions } from "@/features/auth/hooks/useModulePermissions";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import AccessDeniedCard from "@/features/auth/components/AccessDeniedCard";
@@ -14,6 +15,8 @@ import {
 import EditUserForm from "@/features/users/components/EditUserForm";
 import type { User } from "@/features/users/types/user.types";
 import { formatDate, parseISODate, SHORT_MONTHS } from "@/lib/dateUtils";
+import { API_URL } from "@/lib/api";
+import { useToast } from "@/hooks/useToast";
 import {
     ArrowLeft,
     Mail,
@@ -23,6 +26,8 @@ import {
     User as UserIcon,
     Pencil,
     AlertCircle,
+    Camera,
+    Loader2,
 } from "lucide-react";
 
 function formatMonthYear(dateStr?: string | null): string {
@@ -80,6 +85,8 @@ export default function UserProfilePage() {
     const [searchParams] = useSearchParams();
     const { user: currentUser } = useAuth();
     const { canView: canViewUsers, canUpdate: canUpdateUsers } = useModulePermissions("Users");
+    const toast = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [isEditOpen, setIsEditOpen] = useState(false);
 
@@ -97,6 +104,7 @@ export default function UserProfilePage() {
                 full_name: currentUser.full_name,
                 email: currentUser.email,
                 contact_number: currentUser.contact_number,
+                profile_picture: currentUser.profile_picture,
                 date_of_joining: currentUser.date_of_joining,
                 end_date: currentUser.end_date,
                 role_id: null,
@@ -108,12 +116,35 @@ export default function UserProfilePage() {
             : undefined;
 
     const { data, isPending, isError, error } = useUser(numericUserId);
+    const { mutate: uploadPicture, isPending: isUploading } = useUploadProfilePicture();
+
+    const user: User | undefined = data?.user || fallbackUser;
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+
+        uploadPicture(
+            { userId: user.user_id, file },
+            {
+                onSuccess: () => {
+                    toast.success("Profile picture updated successfully.");
+                },
+                onError: (err) => {
+                    toast.error(err, "Failed to upload profile picture.");
+                },
+                onSettled: () => {
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                    }
+                },
+            }
+        );
+    };
 
     if (!canView) {
         return <AccessDeniedCard module="Users" />;
     }
-
-    const user: User | undefined = data?.user || fallbackUser;
 
     if (isPending && !user) {
         return (
@@ -132,7 +163,7 @@ export default function UserProfilePage() {
                 <div className="flex items-center gap-2">
                     <AlertCircle className="size-5 shrink-0" />
                     <p className="text-sm font-semibold">
-                        {(error as any)?.response?.data?.message || error?.message || "Failed to load user profile."}
+                        {((error as unknown) as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || error?.message || "Failed to load user profile."}
                     </p>
                 </div>
                 {canViewUsers && (
@@ -238,9 +269,49 @@ export default function UserProfilePage() {
                         <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-12 h-1 rounded-full bg-border/80" />
                     </div>
                     <div className="px-6 pb-6 -mt-12 flex flex-col items-center">
-                        <div className="size-24 rounded-full ring-4 ring-card bg-primary/10 text-primary border border-primary/20 flex items-center justify-center text-2xl font-bold shadow-xs select-none">
-                            {initials}
+                        <div className="relative group">
+                            <div className="size-24 rounded-full ring-4 ring-card bg-primary/10 text-primary border border-primary/20 flex items-center justify-center text-2xl font-bold shadow-xs select-none overflow-hidden relative">
+                                {user.profile_picture ? (
+                                    <img
+                                        src={`${API_URL}/uploads/${user.profile_picture}`}
+                                        alt={user.full_name}
+                                        className="size-full object-cover"
+                                    />
+                                ) : (
+                                    <span>{initials}</span>
+                                )}
+
+                                {isUploading && (
+                                    <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center z-10">
+                                        <Loader2 className="size-6 animate-spin text-primary" />
+                                    </div>
+                                )}
+                            </div>
+
+                            {canUpdate && (
+                                <>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/webp"
+                                        className="hidden"
+                                        onChange={handleFileChange}
+                                        disabled={isUploading}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={isUploading}
+                                        className="absolute bottom-0 right-0 size-7.5 rounded-full bg-primary text-primary-foreground border-2 border-card shadow-sm flex items-center justify-center hover:bg-primary/90 transition-all cursor-pointer disabled:opacity-50"
+                                        title="Change profile picture"
+                                        aria-label="Change profile picture"
+                                    >
+                                        <Camera className="size-3.5" />
+                                    </button>
+                                </>
+                            )}
                         </div>
+
                         <h2 className="mt-3 text-xl font-bold tracking-tight text-foreground text-center">
                             {user.full_name}
                         </h2>

@@ -11,7 +11,8 @@ import {
     X,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/context/AuthContext";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
+import { API_URL } from "@/lib/api";
 
 interface SidebarProps {
     isCollapsed: boolean;
@@ -140,10 +141,18 @@ export default function Sidebar({
                     title={isCollapsed ? (user?.full_name ?? "My Profile") : undefined}
                 >
                     <div
-                        className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 font-semibold text-xs text-primary"
+                        className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 font-semibold text-xs text-primary overflow-hidden"
                         title={user?.full_name}
                     >
-                        {initials}
+                        {user?.profile_picture ? (
+                            <img
+                                src={`${API_URL}/uploads/${user.profile_picture}`}
+                                alt={user.full_name || "Profile"}
+                                className="size-full object-cover"
+                            />
+                        ) : (
+                            initials
+                        )}
                     </div>
 
                     {!isCollapsed && (
