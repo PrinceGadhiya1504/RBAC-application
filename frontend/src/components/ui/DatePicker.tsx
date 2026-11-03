@@ -146,7 +146,7 @@ export default function DatePicker({
 
     return (
         <div ref={containerRef} className="relative w-full">
-            <div className="relative flex items-center">
+            <div className={`relative flex items-center ${disabled ? "cursor-not-allowed" : ""}`}>
                 <input
                     id={inputId}
                     type="text"
@@ -160,7 +160,7 @@ export default function DatePicker({
                     className={`h-9 w-full rounded-lg border border-input bg-background px-3 pr-16 text-xs shadow-xs transition-colors cursor-pointer placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
                 />
 
-                <div className="absolute right-1 flex items-center gap-0.5">
+                <div className={`absolute right-1 flex items-center gap-0.5 ${disabled ? "cursor-not-allowed" : ""}`}>
                     {Boolean(value) && !disabled && (
                         <button
                             type="button"
@@ -177,7 +177,7 @@ export default function DatePicker({
                         type="button"
                         onClick={() => !disabled && setIsOpen((prev) => !prev)}
                         disabled={disabled}
-                        className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
+                        className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:pointer-events-none"
                         title="Open date picker calendar"
                         aria-label="Open date picker calendar"
                     >

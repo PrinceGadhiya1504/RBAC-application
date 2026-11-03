@@ -152,44 +152,48 @@ export default function EditUserForm({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="editUserRole">Assigned Role</Label>
-                    <select
-                        id="editUserRole"
-                        value={roleId}
-                        disabled={!canEditAllFields}
-                        onChange={(e) => setRoleId(e.target.value)}
-                        className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
-                    >
-                        <option value="">No role assigned</option>
-                        {roleId && !roles.some((r) => String(r.role_id) === roleId) && (
-                            <option value={roleId}>{user.role_name || `Role #${roleId}`}</option>
-                        )}
-                        {roles.map((r) => (
-                            <option key={r.role_id} value={r.role_id}>
-                                {r.name}
-                            </option>
-                        ))}
-                    </select>
+                    <div className={!canEditAllFields ? "cursor-not-allowed" : ""}>
+                        <select
+                            id="editUserRole"
+                            value={roleId}
+                            disabled={!canEditAllFields}
+                            onChange={(e) => setRoleId(e.target.value)}
+                            className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50"
+                        >
+                            <option value="">No role assigned</option>
+                            {roleId && !roles.some((r) => String(r.role_id) === roleId) && (
+                                <option value={roleId}>{user.role_name || `Role #${roleId}`}</option>
+                            )}
+                            {roles.map((r) => (
+                                <option key={r.role_id} value={r.role_id}>
+                                    {r.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
 
                 <div className="space-y-2">
                     <Label htmlFor="editUserPosition">Job Position</Label>
-                    <select
-                        id="editUserPosition"
-                        value={positionId}
-                        disabled={!canEditAllFields}
-                        onChange={(e) => setPositionId(e.target.value)}
-                        className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
-                    >
-                        <option value="">No position assigned</option>
-                        {positionId && !positions.some((p) => String(p.position_id) === positionId) && (
-                            <option value={positionId}>{user.position_name || `Position #${positionId}`}</option>
-                        )}
-                        {positions.map((p) => (
-                            <option key={p.position_id} value={p.position_id}>
-                                {p.name}
-                            </option>
-                        ))}
-                    </select>
+                    <div className={!canEditAllFields ? "cursor-not-allowed" : ""}>
+                        <select
+                            id="editUserPosition"
+                            value={positionId}
+                            disabled={!canEditAllFields}
+                            onChange={(e) => setPositionId(e.target.value)}
+                            className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer disabled:cursor-not-allowed disabled:pointer-events-none disabled:opacity-50"
+                        >
+                            <option value="">No position assigned</option>
+                            {positionId && !positions.some((p) => String(p.position_id) === positionId) && (
+                                <option value={positionId}>{user.position_name || `Position #${positionId}`}</option>
+                            )}
+                            {positions.map((p) => (
+                                <option key={p.position_id} value={p.position_id}>
+                                    {p.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
