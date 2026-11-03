@@ -47,7 +47,7 @@ export interface CreateUserRequest {
 export interface UpdateUserRequest {
     full_name: string;
     email: string;
-    contact_number?: string;
+    contact_number?: string | null;
     date_of_joining?: string;
     end_date?: string | null;
     role_id?: number | null;

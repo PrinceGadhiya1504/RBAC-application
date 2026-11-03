@@ -94,8 +94,7 @@ export default function UsersTable() {
                             <tr
                                 key={user.user_id}
                                 onClick={() => {
-                                    sessionStorage.setItem("viewing_user_id", String(user.user_id));
-                                    navigate(`/users/profile?id=${user.user_id}`, { state: { user, userId: user.user_id } });
+                                    navigate(`/users/profile?id=${user.user_id}`);
                                 }}
                                 className="transition-colors hover:bg-muted/30 cursor-pointer"
                             >
@@ -128,8 +127,7 @@ export default function UsersTable() {
                                             variant="outline"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                sessionStorage.setItem("viewing_user_id", String(user.user_id));
-                                                navigate(`/users/profile?id=${user.user_id}`, { state: { user, userId: user.user_id } });
+                                                navigate(`/users/profile?id=${user.user_id}`);
                                             }}
                                             className="h-8 cursor-pointer"
                                         >

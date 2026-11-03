@@ -36,7 +36,7 @@ export default function LoginForm() {
         event.preventDefault();
 
         login({
-            email,
+            email: email.trim().toLowerCase(),
             password,
         });
     };

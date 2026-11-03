@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useUpdateUser } from "../hooks/useUpdateUser";
 import { useRoles } from "@/features/roles/hooks/useRoles";
 import { usePositions } from "@/features/positions/hooks/usePositions";
-import type { User } from "../types/user.types";
+import { useModulePermissions } from "@/features/auth/hooks/useModulePermissions";
+import type { User, UpdateUserRequest } from "../types/user.types";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,29 +15,27 @@ interface EditUserFormProps {
     user: User;
     onCancel: () => void;
     onSuccess: () => void;
+    canEditRestrictedFields?: boolean;
 }
 
 export default function EditUserForm({
     user,
     onCancel,
     onSuccess,
+    canEditRestrictedFields,
 }: EditUserFormProps) {
     const toast = useToast();
+    const { user: currentUser, refreshProfile } = useAuth();
+    const { canUpdate: canUpdateUsers } = useModulePermissions("Users");
+    const canEditAllFields = canEditRestrictedFields ?? Boolean(canUpdateUsers);
+
     const [fullName, setFullName] = useState(user.full_name);
     const [email, setEmail] = useState(user.email);
     const [contactNumber, setContactNumber] = useState(user.contact_number ?? "");
-    const [dateOfJoining, setDateOfJoining] = useState(
-        user.date_of_joining ? user.date_of_joining.split("T")[0] : ""
-    );
-    const [endDate, setEndDate] = useState(
-        user.end_date ? user.end_date.split("T")[0] : ""
-    );
-    const [roleId, setRoleId] = useState<string>(
-        user.role_id ? String(user.role_id) : ""
-    );
-    const [positionId, setPositionId] = useState<string>(
-        user.position_id ? String(user.position_id) : ""
-    );
+    const [dateOfJoining, setDateOfJoining] = useState(user.date_of_joining?.split("T")[0] ?? "");
+    const [endDate, setEndDate] = useState(user.end_date?.split("T")[0] ?? "");
+    const [roleId, setRoleId] = useState(user.role_id ? String(user.role_id) : "");
+    const [positionId, setPositionId] = useState(user.position_id ? String(user.position_id) : "");
 
     const { mutate: updateUser, isPending } = useUpdateUser();
     const { data: rolesData } = useRoles();
@@ -49,27 +49,31 @@ export default function EditUserForm({
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        if (isDateInvalid) {
+        if (canEditAllFields && isDateInvalid) {
             toast.error("End date must be greater than start date.");
             return;
         }
 
+        const userData: UpdateUserRequest = {
+            full_name: fullName.trim(),
+            email: email.trim().toLowerCase(),
+            contact_number: contactNumber.trim() || null,
+            ...(canEditAllFields && {
+                date_of_joining: dateOfJoining || undefined,
+                end_date: endDate || null,
+                role_id: roleId ? Number(roleId) : null,
+                position_id: positionId ? Number(positionId) : null,
+            }),
+        };
+
         updateUser(
+            { userId: user.user_id, userData },
             {
-                userId: user.user_id,
-                userData: {
-                    full_name: fullName,
-                    email,
-                    contact_number: contactNumber.trim() || undefined,
-                    date_of_joining: dateOfJoining || undefined,
-                    end_date: endDate || null,
-                    role_id: roleId ? Number(roleId) : null,
-                    position_id: positionId ? Number(positionId) : null,
-                },
-            },
-            {
-                onSuccess: () => {
+                onSuccess: async () => {
                     toast.success("User updated successfully.");
+                    if (currentUser && currentUser.user_id === user.user_id) {
+                        await refreshProfile();
+                    }
                     onSuccess();
                 },
                 onError: (err) => {
@@ -86,7 +90,7 @@ export default function EditUserForm({
                 <Input
                     id="editFullName"
                     value={fullName}
-                    onChange={(event) => setFullName(event.target.value)}
+                    onChange={(e) => setFullName(e.target.value)}
                     required
                 />
             </div>
@@ -97,7 +101,7 @@ export default function EditUserForm({
                     id="editEmail"
                     type="email"
                     value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                 />
             </div>
@@ -108,7 +112,7 @@ export default function EditUserForm({
                     id="editContactNumber"
                     type="tel"
                     value={contactNumber}
-                    onChange={(event) => setContactNumber(event.target.value)}
+                    onChange={(e) => setContactNumber(e.target.value)}
                     placeholder="e.g. +1 555-0199"
                     maxLength={20}
                 />
@@ -120,6 +124,7 @@ export default function EditUserForm({
                     <DatePicker
                         id="editDateOfJoining"
                         value={dateOfJoining}
+                        disabled={!canEditAllFields}
                         onChange={(val) => setDateOfJoining(val)}
                     />
                 </div>
@@ -132,10 +137,11 @@ export default function EditUserForm({
                         id="editEndDate"
                         value={endDate}
                         min={dateOfJoining || undefined}
+                        disabled={!canEditAllFields}
                         onChange={(val) => setEndDate(val)}
-                        className={isDateInvalid ? "border-destructive focus-visible:ring-destructive" : ""}
+                        className={canEditAllFields && isDateInvalid ? "border-destructive focus-visible:ring-destructive" : ""}
                     />
-                    {isDateInvalid && (
+                    {canEditAllFields && isDateInvalid && (
                         <p className="text-xs text-destructive">
                             End date must be greater than start date.
                         </p>
@@ -149,10 +155,14 @@ export default function EditUserForm({
                     <select
                         id="editUserRole"
                         value={roleId}
+                        disabled={!canEditAllFields}
                         onChange={(e) => setRoleId(e.target.value)}
                         className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
                     >
                         <option value="">No role assigned</option>
+                        {roleId && !roles.some((r) => String(r.role_id) === roleId) && (
+                            <option value={roleId}>{user.role_name || `Role #${roleId}`}</option>
+                        )}
                         {roles.map((r) => (
                             <option key={r.role_id} value={r.role_id}>
                                 {r.name}
@@ -166,10 +176,14 @@ export default function EditUserForm({
                     <select
                         id="editUserPosition"
                         value={positionId}
+                        disabled={!canEditAllFields}
                         onChange={(e) => setPositionId(e.target.value)}
                         className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
                     >
                         <option value="">No position assigned</option>
+                        {positionId && !positions.some((p) => String(p.position_id) === positionId) && (
+                            <option value={positionId}>{user.position_name || `Position #${positionId}`}</option>
+                        )}
                         {positions.map((p) => (
                             <option key={p.position_id} value={p.position_id}>
                                 {p.name}

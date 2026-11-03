@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateUser } from "../services/usersApi";
-import type { UpdateUserRequest } from "../types/user.types";
+import type { UpdateUserRequest, UserResponse } from "../types/user.types";
 
 interface UpdateUserVariables {
     userId: number;
@@ -13,10 +13,17 @@ export const useUpdateUser = () => {
     return useMutation({
         mutationFn: ({ userId, userData }: UpdateUserVariables) =>
             updateUser(userId, userData),
-        onSuccess: () => {
+        onSuccess: (data: UserResponse, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["users"],
             });
+            if (data?.user) {
+                queryClient.setQueryData(["users", variables.userId], {
+                    success: true,
+                    user: data.user,
+                });
+            }
         },
     });
 };
+

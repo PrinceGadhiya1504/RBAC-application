@@ -25,8 +25,8 @@ export const createUser = async (userData: CreateUserRequest): Promise<User> => 
 export const updateUser = async (
     userId: number,
     userData: UpdateUserRequest
-): Promise<User> => {
-    const response = await api.put<User>(`/users/${userId}`, userData);
+): Promise<UserResponse> => {
+    const response = await api.put<UserResponse>(`/users/${userId}`, userData);
     return response.data;
 };
 

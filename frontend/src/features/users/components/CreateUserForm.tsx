@@ -48,8 +48,8 @@ export default function CreateUserForm({
 
         createUser(
             {
-                full_name: fullName,
-                email,
+                full_name: fullName.trim(),
+                email: email.trim().toLowerCase(),
                 password,
                 contact_number: contactNumber.trim() || undefined,
                 date_of_joining: dateOfJoining || undefined,

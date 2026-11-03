@@ -76,6 +76,8 @@ def login_user(data):
             "user_id": user.user_id,
             "full_name": user.full_name,
             "email": user.email,
+            "contact_number": user.contact_number,
+            "date_of_joining": user.date_of_joining.isoformat() if user.date_of_joining else None,
             "role": role_name,
             "roles": user_roles,
             "permissions": permissions_map,

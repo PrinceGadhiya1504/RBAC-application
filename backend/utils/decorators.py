@@ -38,6 +38,34 @@ def role_required(*allowed_roles):
         return wrapper
     return decorator
 
+def check_user_page_permission(user_id, page_name, permission_name):
+    if not user_id:
+        return False
+
+    has_permission = db.session.query(
+        RolePagePermission.role_page_permission_id
+    ).join(
+        UserRole,
+        UserRole.role_id == RolePagePermission.role_id
+    ).join(
+        PagePermission,
+        PagePermission.page_permission_id
+        == RolePagePermission.page_permission_id
+    ).join(
+        Page,
+        Page.page_id == PagePermission.page_id
+    ).join(
+        Permission,
+        Permission.permission_id == PagePermission.permission_id
+    ).filter(
+        UserRole.user_id == int(user_id),
+        Page.name == page_name,
+        Permission.name == permission_name,
+        RolePagePermission.is_given.is_(True)
+    ).first()
+
+    return has_permission is not None
+
 def page_permission_required(page_name, permission_name):
     def decorator(func):
         @wraps(func)
@@ -45,29 +73,7 @@ def page_permission_required(page_name, permission_name):
         def wrapper(*args, **kwargs):
             user_id = int(get_jwt_identity())
 
-            has_permission = db.session.query(
-                RolePagePermission.role_page_permission_id
-            ).join(
-                UserRole,
-                UserRole.role_id == RolePagePermission.role_id
-            ).join(
-                PagePermission,
-                PagePermission.page_permission_id
-                == RolePagePermission.page_permission_id
-            ).join(
-                Page,
-                Page.page_id == PagePermission.page_id
-            ).join(
-                Permission,
-                Permission.permission_id == PagePermission.permission_id
-            ).filter(
-                UserRole.user_id == user_id,
-                Page.name == page_name,
-                Permission.name == permission_name,
-                RolePagePermission.is_given.is_(True)
-            ).first()
-
-            if not has_permission:
+            if not check_user_page_permission(user_id, page_name, permission_name):
                 return jsonify({
                     "success": False,
                     "message": f"You do not have {permission_name.upper()} access to the {page_name} module."

@@ -226,7 +226,17 @@ def update_user(user_id, data):
         user.full_name = data["full_name"].strip()
 
     if "email" in data and data["email"]:
-        user.email = data["email"].strip().lower()
+        new_email = data["email"].strip().lower()
+        if new_email != user.email:
+            existing_user = db.session.execute(
+                select(User).where(User.email == new_email, User.user_id != user_id)
+            ).scalar_one_or_none()
+            if existing_user:
+                return {
+                    "success": False,
+                    "message": "Email is already registered.",
+                }, 409
+            user.email = new_email
 
     if "contact_number" in data:
         user.contact_number = data["contact_number"].strip() if data["contact_number"] else None
@@ -318,9 +328,12 @@ def update_user(user_id, data):
     try:
         db.session.commit()
 
+        updated_user = get_user_by_id(user_id)
+
         return {
             "success": True,
-            "message": "User updated successfully."
+            "message": "User updated successfully.",
+            "user": updated_user,
         }, 200
 
     except Exception:
